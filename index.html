@@ -8,11 +8,16 @@
 <style>
   body { background: linear-gradient(to bottom, #0f172a, #1e1b4b, #000000); color: white; font-family: sans-serif; overflow-x: hidden; touch-action: manipulation; }
   .station-circle { position: relative; width: 320px; height: 320px; border: 10px solid #84cc16; border-radius: 50%; margin: 20px auto; box-shadow: 0 0 20px rgba(132, 204, 22, 0.4); }
-  .station { position: absolute; transform: translate(-50%, -50%); background: white; padding: 2px 5px; border-radius: 4px; border: 1.5px solid #84cc16; display: flex; flex-direction: column; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 10; }
+  
+  /* ↓ここで絶対に縦書きにならないように強制しています！ */
+  .station { position: absolute; transform: translate(-50%, -50%); background: white; padding: 2px 5px; border-radius: 4px; border: 1.5px solid #84cc16; display: flex; flex-direction: column; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 10; width: max-content !important; white-space: nowrap !important; }
+  
   .station.current { background: #fef08a; border: 2.5px solid #ef4444; transform: translate(-50%, -50%) scale(1.2); z-index: 30; animation: pulse 1.5s infinite; }
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-  .station-ja { color: #166534; font-size: 9px; font-weight: 900; }
-  .station-en { color: #65a30d; font-size: 6px; font-weight: 700; }
+  
+  .station-ja { color: #166534; font-size: 9px; font-weight: 900; white-space: nowrap !important; line-height: 1.2; display: block; }
+  .station-en { color: #65a30d; font-size: 6px; font-weight: 700; white-space: nowrap !important; line-height: 1.2; display: block; }
+  
   .roulette-wheel { position: relative; width: 200px; height: 200px; border-radius: 50%; background: conic-gradient(from 260deg, #b91c1c 0% 20%, #15803d 20% 100%); border: 5px solid #4b5563; transition: transform 3.5s cubic-bezier(0.1, 0.8, 0.1, 1); margin: 0 auto; }
   .text-outline { text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000; }
   .control-panel { background: rgba(0, 0, 0, 0.6); border-radius: 10px; padding: 10px; margin: 10px auto; width: 95%; max-width: 500px; font-size: 14px; }
@@ -50,24 +55,17 @@
   <div class="mt-6 bg-black bg-opacity-60 p-4 rounded-xl border-2 border-purple-800 flex flex-col items-center w-[95%] max-w-[340px]">
     
     <div class="relative w-[210px] h-[210px] mt-2">
-      <!-- 針（ポインター） -->
       <div style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid #fbbf24; z-index: 50; filter: drop-shadow(0px 4px 2px rgba(0,0,0,0.6));"></div>
       
-      <!-- ルーレット盤 -->
       <div class="roulette-wheel" id="wheel">
-        
-        <!-- 戻る 20%（外向きに配置） -->
         <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight" style="transform: translate(-50%, -50%) rotate(296deg) translateY(-60px);">
           <span class="text-base">戻る</span>
           <span class="text-sm text-gray-200">20%</span>
         </div>
-        
-        <!-- 進む 80%（外向きに配置） -->
         <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight tracking-widest" style="transform: translate(-50%, -50%) rotate(116deg) translateY(-40px);">
           <span class="text-3xl">進む</span>
           <span class="text-yellow-300 text-2xl mt-1">80%</span>
         </div>
-
       </div>
     </div>
 
@@ -229,13 +227,11 @@
       el.btn.style.opacity = '1';
       
       const deg = (360 - (state.rot % 360)) % 360;
-      // 戻るエリア（260度〜332度）
       if(deg >= 260 && deg < 332) {
         el.res.innerHTML = '<span class="text-red-500 text-lg">戻る...😭</span>';
         playFail();
         if(state.prog > 0) { 
           state.prog--; 
-          // 内回り・外回りに応じて戻る方向を変える
           state.curr = (state.curr + (state.dir === 'outer' ? -1 : 1) + 30) % 30; 
         } else {
           setTimeout(()=> el.res.innerHTML = '<span class="text-gray-400">まだ進んでない！</span>', 1000);
@@ -244,7 +240,6 @@
         el.res.innerHTML = '<span class="text-green-400 text-lg">進む！🏃‍♂️</span>';
         playSuccess();
         state.prog++; 
-        // 内回り・外回りに応じて進む方向を変える
         state.curr = (state.curr + (state.dir === 'outer' ? 1 : -1) + 30) % 30;
       }
       
