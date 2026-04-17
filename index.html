@@ -71,74 +71,33 @@
     <h1 class="text-4xl font-black text-yellow-400 mb-2 animate-bounce">CLEAR!!</h1>
     <button onclick="location.reload()" class="bg-green-600 px-6 py-2 rounded-full font-bold">もう一度遊ぶ</button>
   </div>
-    <script>
+  <script>
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playTone(f, t, d, type='sine', v=0.2) {
+    function playTone(f, t, d, type='sine', v=0.5) {
       if(audioCtx.state==='suspended') audioCtx.resume();
       const o=audioCtx.createOscillator(), g=audioCtx.createGain();
       o.type=type; o.frequency.setValueAtTime(f, t);
-      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t+0.02); g.gain.exponentialRampToValueAtTime(0.01, t+d);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t+Math.min(0.05, d/2)); g.gain.exponentialRampToValueAtTime(0.01, t+d);
       o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t+d);
     }
-    const stations = [{ja:"東京",en:"Tokyo"},{ja:"有楽町",en:"Yurakucho"},{ja:"新橋",en:"Shimbashi"},{ja:"浜松町",en:"Hamamatsucho"},{ja:"田町",en:"Tamachi"},{ja:"高輪GW",en:"Takanawa GW"},{ja:"品川",en:"Shinagawa"},{ja:"大崎",en:"Osaki"},{ja:"五反田",en:"Gotanda"},{ja:"目黒",en:"Meguro"},{ja:"恵比寿",en:"Ebisu"},{ja:"渋谷",en:"Shibuya"},{ja:"原宿",en:"Harajuku"},{ja:"代々木",en:"Yoyogi"},{ja:"新宿",en:"Shinjuku"},{ja:"新大久保",en:"Shin-Okubo"},{ja:"高田馬場",en:"Takadanobaba"},{ja:"目白",en:"Mejiro"},{ja:"池袋",en:"Ikebukuro"},{ja:"大塚",en:"Otsuka"},{ja:"巣鴨",en:"Sugamo"},{ja:"駒込",en:"Komagome"},{ja:"田端",en:"Tabata"},{ja:"西日暮里",en:"Nishi-Nippori"},{ja:"日暮里",en:"Nippori"},{ja:"鶯谷",en:"Uguisudani"},{ja:"上野",en:"Ueno"},{ja:"御徒町",en:"Okachimachi"},{ja:"秋葉原",en:"Akihabara"},{ja:"神田",en:"Kanda"}];
-    let state = { start:0, curr:0, prog:0, rot:0, spinning:false, dir:'outer' };
-    const el = { circle:document.getElementById('circle'), select:document.getElementById('start-station'), name:document.getElementById('curr-name'), count:document.getElementById('prog-count'), wheel:document.getElementById('wheel'), btn:document.getElementById('spin-btn'), res:document.getElementById('res-display'), overlay:document.getElementById('clear-overlay') };
-
-    function init() {
-      stations.forEach((s, i) => { const o=document.createElement('option'); o.value=i; o.textContent=s.ja; el.select.appendChild(o); });
-      render();
-      el.select.onchange = e => { state.start = state.curr = parseInt(e.target.value); state.prog = 0; render(); };
-      document.querySelectorAll('input[name="dir"]').forEach(r => r.onchange = e => { state.dir = e.target.value; state.prog = 0; render(); });
-      el.btn.onclick = spin;
-      el.name.textContent = stations[state.curr].ja;
-      document.getElementById('reset-btn').onclick = () => location.reload();
+    function playSuccess() {
+      const n = audioCtx.currentTime;
+      playTone(783.99, n, 0.15, 'square', 0.4); playTone(1046.50, n+0.15, 0.15, 'square', 0.4); playTone(1318.51, n+0.3, 0.15, 'square', 0.4);
+      playTone(1567.98, n+0.45, 0.6, 'square', 0.5); playTone(1046.50, n+0.45, 0.6, 'sine', 0.3);
     }
-
-    function render() {
-      const radius = 150;
-      el.circle.querySelectorAll('.station').forEach(s => s.remove());
-      stations.forEach((s, i) => {
-        const div = document.createElement('div'); div.className = 'station' + (i===state.curr?' current':'');
-        div.innerHTML = `<span class="station-ja">${s.ja}</span><span class="station-en">${s.en}</span>`;
-        const rad = (i/30*360+15) * Math.PI/180;
-        div.style.left = (160 + radius * Math.cos(rad)) + 'px';
-        div.style.top = (160 + radius * Math.sin(rad)) + 'px';
-        el.circle.appendChild(div);
-      });
-      el.name.textContent = stations[state.curr].ja;
-      el.count.textContent = `${state.prog}/30`;
+    function playFail() {
+      const n = audioCtx.currentTime;
+      playTone(523.25, n, 0.3, 'sawtooth', 0.5); playTone(466.16, n+0.3, 0.3, 'sawtooth', 0.5); playTone(415.30, n+0.6, 0.3, 'sawtooth', 0.5);
+      const o1 = audioCtx.createOscillator(), o2 = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o1.type='sawtooth'; o2.type='square';
+      o1.frequency.setValueAtTime(392.00, n+0.9); o1.frequency.exponentialRampToValueAtTime(150, n+2.0);
+      o2.frequency.setValueAtTime(405.00, n+0.9); o2.frequency.exponentialRampToValueAtTime(140, n+2.0);
+      g.gain.setValueAtTime(0, n+0.9); g.gain.linearRampToValueAtTime(0.6, n+0.95); g.gain.exponentialRampToValueAtTime(0.01, n+2.0);
+      o1.connect(g); o2.connect(g); g.connect(audioCtx.destination);
+      o1.start(n+0.9); o2.start(n+0.9); o1.stop(n+2.0); o2.stop(n+2.0);
     }
-
-    function spin() {
-      if(state.spinning) return; state.spinning = true; el.btn.disabled = true;
-      const moveRot = (Math.floor(Math.random()*4+4)*360) + Math.floor(Math.random()*360);
-      state.rot += moveRot; el.wheel.style.transform = `rotate(${state.rot}deg)`;
-      let start = Date.now();
-      const timer = setInterval(() => {
-        let elapsed = Date.now() - start;
-        if(elapsed > 3500) { clearInterval(timer); finishSpin(); }
-        else playTone(600 - (elapsed/3500*400), audioCtx.currentTime, 0.05, 'triangle', 0.1);
-      }, 150);
+    function playClear() {
+      const n = audioCtx.currentTime;
+      const notes = [{f:523.25,t:0,d:0.2},{f:523.25,t:0.2,d:0.2},{f:523.25,t:0.4,d:0.2},{f:659.25,t:0.6,d:0.6},{f:523.25,t:1.2,d:0.2},{f:659.25,t:1.4,d:0.2},{f:783.99,t:1.6,d:0.6},{f:659.25,t:2.2,d:0.2},{f:783.99,t:2.4,d:0.2},{f:1046.50,t:2.6,d:1.5}];
+      notes.forEach(x=>{playTone(x.f, n+x.t, x.d, 'square', 0.4); playTone(x.f, n+x.t, x.d, 'sine', 0.4);});
     }
-
-    function finishSpin() {
-      state.spinning = false; el.btn.disabled = false;
-      const deg = (360 - (state.rot % 360)) % 360;
-      if(deg >= 260 && deg < 332) {
-        el.res.innerHTML = '<span class="text-red-500">戻る...😭</span>';
-        playTone(300, audioCtx.currentTime, 0.3, 'sawtooth');
-        if(state.prog > 0) { state.prog--; state.curr = (state.curr + (state.dir==='outer'?-1:1) + 30) % 30; }
-      } else {
-        el.res.innerHTML = '<span class="text-green-500">進む！🏃‍♂️</span>';
-        playTone(800, audioCtx.currentTime, 0.2, 'square');
-        state.prog++; state.curr = (state.curr + (state.dir==='outer'?1:-1) + 30) % 30;
-      }
-      render();
-      if(state.prog >= 30) { el.overlay.classList.remove('hidden'); playTone(1000, audioCtx.currentTime, 1, 'sine'); }
-    }
-    init();
-  </script>
-</body>
-</html>
-
-  
