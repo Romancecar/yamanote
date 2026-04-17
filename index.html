@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -15,11 +16,11 @@
   .station-en { color: #65a30d; font-size: 6px; font-weight: 700; }
   .roulette-wheel { position: relative; width: 200px; height: 200px; border-radius: 50%; background: conic-gradient(from 260deg, #b91c1c 0% 20%, #15803d 20% 100%); border: 5px solid #4b5563; transition: transform 3.5s cubic-bezier(0.1, 0.8, 0.1, 1); margin: 0 auto; }
   .text-outline { text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000; }
-  .control-panel { background: rgba(0, 0, 0, 0.6); border-radius: 10px; padding: 10px; margin: 10px; width: 95%; max-width: 500px; font-size: 14px; }
+  .control-panel { background: rgba(0, 0, 0, 0.6); border-radius: 10px; padding: 10px; margin: 10px auto; width: 95%; max-width: 500px; font-size: 14px; }
   select, input[type="radio"] { cursor: pointer; }
 </style>
 </head>
-<body class="flex flex-col items-center py-4">
+<body class="flex flex-col items-center py-4 min-h-screen">
   <h1 class="text-2xl font-black text-green-400 text-outline italic">山手線一周ゲーム</h1>
   
   <div class="control-panel">
@@ -29,65 +30,86 @@
         <select id="start-station" class="bg-gray-800 text-white p-1 rounded border border-gray-600"></select>
       </div>
       <div class="flex gap-2 text-xs">
-        <label><input type="radio" name="dir" value="outer" checked>外回</label>
-        <label><input type="radio" name="dir" value="inner">内回</label>
+        <label class="flex items-center gap-1"><input type="radio" name="dir" value="outer" checked>外回</label>
+        <label class="flex items-center gap-1"><input type="radio" name="dir" value="inner">内回</label>
       </div>
-      <button id="reset-btn" class="bg-gray-700 px-2 py-1 rounded text-xs border border-gray-500">リセット</button>
+      <button id="reset-btn" class="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-xs border border-gray-500 transition-colors">リセット</button>
     </div>
-    <div class="flex justify-around mt-2 border-t border-gray-700 pt-2">
-      <div class="text-center"><p class="text-[10px] text-gray-400">現在</p><p id="curr-name" class="font-bold text-red-400 text-sm">-</p></div>
-      <div class="text-center"><p class="text-[10px] text-gray-400">駅数</p><p id="prog-count" class="font-bold text-green-400 text-sm">0/30</p></div>
+    <div class="flex justify-around mt-3 border-t border-gray-700 pt-2">
+      <div class="text-center"><p class="text-[10px] text-gray-400">現在地</p><p id="curr-name" class="font-bold text-red-400 text-base">-</p></div>
+      <div class="text-center"><p class="text-[10px] text-gray-400">進んだ駅数</p><p id="prog-count" class="font-bold text-green-400 text-base">0/30</p></div>
     </div>
   </div>
 
   <div class="station-circle" id="circle">
     <div class="absolute inset-0 m-auto w-24 h-16 bg-white rounded border-2 border-gray-300 flex flex-col items-center justify-center z-0">
       <span class="text-black font-black text-lg">山手線</span>
-      <span class="text-white font-bold text-[8px] bg-[#84cc16] w-full text-center">Yamanote Line</span>
+      <span class="text-white font-bold text-[8px] bg-[#84cc16] w-full text-center py-0.5">Yamanote Line</span>
     </div>
   </div>
 
-  <div class="mt-6 bg-black bg-opacity-60 p-4 rounded-xl border-2 border-purple-800 flex flex-col items-center">
+  <div class="mt-6 bg-black bg-opacity-60 p-4 rounded-xl border-2 border-purple-800 flex flex-col items-center w-[95%] max-w-[340px]">
     
     <div class="relative w-[210px] h-[210px] mt-2">
+      <!-- 針（ポインター） -->
       <div style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid #fbbf24; z-index: 50; filter: drop-shadow(0px 4px 2px rgba(0,0,0,0.6));"></div>
+      
+      <!-- ルーレット盤 -->
       <div class="roulette-wheel" id="wheel">
+        
+        <!-- 戻る 20%（外向きに配置） -->
         <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight" style="transform: translate(-50%, -50%) rotate(296deg) translateY(-60px);">
           <span class="text-base">戻る</span>
-          <span class="text-sm">20%</span>
+          <span class="text-sm text-gray-200">20%</span>
         </div>
+        
+        <!-- 進む 80%（外向きに配置） -->
         <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight tracking-widest" style="transform: translate(-50%, -50%) rotate(116deg) translateY(-40px);">
           <span class="text-3xl">進む</span>
           <span class="text-yellow-300 text-2xl mt-1">80%</span>
         </div>
+
       </div>
     </div>
 
-    <button id="spin-btn" class="w-full mt-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full font-black text-lg shadow-lg active:scale-95 transition-transform">ルーレットを回す！</button>
+    <button id="spin-btn" class="w-full mt-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-full font-black text-xl shadow-lg active:scale-95 transition-all text-outline">ルーレットを回す！</button>
     <div id="res-display" class="mt-3 text-sm font-bold text-gray-400 h-6">スタート駅を選んでね</div>
   </div>
 
-  <div id="clear-overlay" class="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col items-center justify-center hidden">
-    <h1 class="text-4xl font-black text-yellow-400 mb-2 animate-bounce">CLEAR!!</h1>
-    <button onclick="location.reload()" class="bg-green-600 px-6 py-2 rounded-full font-bold">もう一度遊ぶ</button>
+  <div id="clear-overlay" class="fixed inset-0 bg-black bg-opacity-95 z-50 flex flex-col items-center justify-center hidden">
+    <h1 class="text-5xl font-black text-yellow-400 mb-4 animate-bounce text-outline">CLEAR!!</h1>
+    <p class="text-white font-bold mb-8 text-lg">山手線一周達成！</p>
+    <button onclick="location.reload()" class="bg-green-600 hover:bg-green-500 px-8 py-4 rounded-full font-black text-xl shadow-[0_0_15px_rgba(34,197,94,0.6)] transition-all">もう一度遊ぶ</button>
   </div>
+
   <script>
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
     function playTone(f, t, d, type='sine', v=0.5) {
-      if(audioCtx.state==='suspended') audioCtx.resume();
-      const o=audioCtx.createOscillator(), g=audioCtx.createGain();
-      o.type=type; o.frequency.setValueAtTime(f, t);
-      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t+Math.min(0.05, d/2)); g.gain.exponentialRampToValueAtTime(0.01, t+d);
-      o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t+d);
+      if(audioCtx.state === 'suspended') audioCtx.resume();
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = type; o.frequency.setValueAtTime(f, t);
+      g.gain.setValueAtTime(0, t); 
+      g.gain.linearRampToValueAtTime(v, t + Math.min(0.05, d/2)); 
+      g.gain.exponentialRampToValueAtTime(0.01, t + d);
+      o.connect(g); g.connect(audioCtx.destination); 
+      o.start(t); o.stop(t + d);
     }
+
     function playSuccess() {
       const n = audioCtx.currentTime;
-      playTone(783.99, n, 0.15, 'square', 0.4); playTone(1046.50, n+0.15, 0.15, 'square', 0.4); playTone(1318.51, n+0.3, 0.15, 'square', 0.4);
-      playTone(1567.98, n+0.45, 0.6, 'square', 0.5); playTone(1046.50, n+0.45, 0.6, 'sine', 0.3);
+      playTone(783.99, n, 0.15, 'square', 0.4); 
+      playTone(1046.50, n+0.15, 0.15, 'square', 0.4); 
+      playTone(1318.51, n+0.3, 0.15, 'square', 0.4);
+      playTone(1567.98, n+0.45, 0.6, 'square', 0.5); 
+      playTone(1046.50, n+0.45, 0.6, 'sine', 0.3);
     }
+
     function playFail() {
       const n = audioCtx.currentTime;
-      playTone(523.25, n, 0.3, 'sawtooth', 0.5); playTone(466.16, n+0.3, 0.3, 'sawtooth', 0.5); playTone(415.30, n+0.6, 0.3, 'sawtooth', 0.5);
+      playTone(523.25, n, 0.3, 'sawtooth', 0.5); 
+      playTone(466.16, n+0.3, 0.3, 'sawtooth', 0.5); 
+      playTone(415.30, n+0.6, 0.3, 'sawtooth', 0.5);
       const o1 = audioCtx.createOscillator(), o2 = audioCtx.createOscillator(), g = audioCtx.createGain();
       o1.type='sawtooth'; o2.type='square';
       o1.frequency.setValueAtTime(392.00, n+0.9); o1.frequency.exponentialRampToValueAtTime(150, n+2.0);
@@ -96,8 +118,150 @@
       o1.connect(g); o2.connect(g); g.connect(audioCtx.destination);
       o1.start(n+0.9); o2.start(n+0.9); o1.stop(n+2.0); o2.stop(n+2.0);
     }
+
     function playClear() {
       const n = audioCtx.currentTime;
-      const notes = [{f:523.25,t:0,d:0.2},{f:523.25,t:0.2,d:0.2},{f:523.25,t:0.4,d:0.2},{f:659.25,t:0.6,d:0.6},{f:523.25,t:1.2,d:0.2},{f:659.25,t:1.4,d:0.2},{f:783.99,t:1.6,d:0.6},{f:659.25,t:2.2,d:0.2},{f:783.99,t:2.4,d:0.2},{f:1046.50,t:2.6,d:1.5}];
-      notes.forEach(x=>{playTone(x.f, n+x.t, x.d, 'square', 0.4); playTone(x.f, n+x.t, x.d, 'sine', 0.4);});
+      const notes = [
+        {f:523.25,t:0,d:0.2}, {f:523.25,t:0.2,d:0.2}, {f:523.25,t:0.4,d:0.2},
+        {f:659.25,t:0.6,d:0.6}, {f:523.25,t:1.2,d:0.2}, {f:659.25,t:1.4,d:0.2},
+        {f:783.99,t:1.6,d:0.6}, {f:659.25,t:2.2,d:0.2}, {f:783.99,t:2.4,d:0.2},
+        {f:1046.50,t:2.6,d:1.5}
+      ];
+      notes.forEach(x => {
+        playTone(x.f, n+x.t, x.d, 'square', 0.4); 
+        playTone(x.f, n+x.t, x.d, 'sine', 0.4);
+      });
     }
+
+    const stations = [
+      {ja:"東京",en:"Tokyo"}, {ja:"有楽町",en:"Yurakucho"}, {ja:"新橋",en:"Shimbashi"},
+      {ja:"浜松町",en:"Hamamatsucho"}, {ja:"田町",en:"Tamachi"}, {ja:"高輪GW",en:"Takanawa GW"},
+      {ja:"品川",en:"Shinagawa"}, {ja:"大崎",en:"Osaki"}, {ja:"五反田",en:"Gotanda"},
+      {ja:"目黒",en:"Meguro"}, {ja:"恵比寿",en:"Ebisu"}, {ja:"渋谷",en:"Shibuya"},
+      {ja:"原宿",en:"Harajuku"}, {ja:"代々木",en:"Yoyogi"}, {ja:"新宿",en:"Shinjuku"},
+      {ja:"新大久保",en:"Shin-Okubo"}, {ja:"高田馬場",en:"Takadanobaba"}, {ja:"目白",en:"Mejiro"},
+      {ja:"池袋",en:"Ikebukuro"}, {ja:"大塚",en:"Otsuka"}, {ja:"巣鴨",en:"Sugamo"},
+      {ja:"駒込",en:"Komagome"}, {ja:"田端",en:"Tabata"}, {ja:"西日暮里",en:"Nishi-Nippori"},
+      {ja:"日暮里",en:"Nippori"}, {ja:"鶯谷",en:"Uguisudani"}, {ja:"上野",en:"Ueno"},
+      {ja:"御徒町",en:"Okachimachi"}, {ja:"秋葉原",en:"Akihabara"}, {ja:"神田",en:"Kanda"}
+    ];
+    
+    let state = { start:0, curr:0, prog:0, rot:0, spinning:false, dir:'outer' };
+    
+    const el = { 
+      circle: document.getElementById('circle'), 
+      select: document.getElementById('start-station'), 
+      name: document.getElementById('curr-name'), 
+      count: document.getElementById('prog-count'), 
+      wheel: document.getElementById('wheel'), 
+      btn: document.getElementById('spin-btn'), 
+      res: document.getElementById('res-display'), 
+      overlay: document.getElementById('clear-overlay') 
+    };
+
+    function init() {
+      stations.forEach((s, i) => { 
+        const o = document.createElement('option'); 
+        o.value = i; 
+        o.textContent = s.ja; 
+        el.select.appendChild(o); 
+      });
+      render();
+      el.select.onchange = e => { 
+        if(state.prog > 0 && !confirm("リセットしますか？")) {
+            e.target.value = state.start; return;
+        }
+        state.start = state.curr = parseInt(e.target.value); state.prog = 0; render(); 
+      };
+      document.querySelectorAll('input[name="dir"]').forEach(r => {
+        r.onchange = e => { 
+          if(state.prog > 0 && !confirm("リセットしますか？")) {
+            document.querySelector(`input[name="dir"][value="${state.dir}"]`).checked = true; return;
+          }
+          state.dir = e.target.value; state.prog = 0; render(); 
+        }
+      });
+      el.btn.onclick = spin;
+      el.name.textContent = stations[state.curr].ja;
+      document.getElementById('reset-btn').onclick = () => location.reload();
+    }
+
+    function render() {
+      const radius = 150;
+      el.circle.querySelectorAll('.station').forEach(s => s.remove());
+      stations.forEach((s, i) => {
+        const div = document.createElement('div'); 
+        div.className = 'station' + (i === state.curr ? ' current' : '');
+        div.innerHTML = `<span class="station-ja">${s.ja}</span><span class="station-en">${s.en}</span>`;
+        const rad = (i / 30 * 360 + 15) * Math.PI / 180;
+        div.style.left = (160 + radius * Math.cos(rad)) + 'px';
+        div.style.top = (160 + radius * Math.sin(rad)) + 'px';
+        el.circle.appendChild(div);
+      });
+      el.name.textContent = stations[state.curr].ja;
+      el.count.textContent = `${state.prog}/30`;
+    }
+
+    function spin() {
+      if(state.spinning) return; 
+      state.spinning = true; el.btn.disabled = true;
+      el.btn.style.opacity = '0.7';
+      el.res.innerHTML = '<span class="text-white animate-pulse">判定中...</span>';
+      
+      if(audioCtx.state === 'suspended') audioCtx.resume();
+
+      const moveRot = (Math.floor(Math.random() * 4 + 4) * 360) + Math.floor(Math.random() * 360);
+      state.rot += moveRot; 
+      el.wheel.style.transform = `rotate(${state.rot}deg)`;
+      
+      let start = Date.now();
+      const timer = setInterval(() => {
+        let elapsed = Date.now() - start;
+        if(elapsed > 3500) { 
+          clearInterval(timer); finishSpin(); 
+        } else {
+          playTone(600 - (elapsed / 3500 * 400), audioCtx.currentTime, 0.05, 'triangle', 0.1);
+        }
+      }, 150);
+    }
+
+    function finishSpin() {
+      state.spinning = false; el.btn.disabled = false;
+      el.btn.style.opacity = '1';
+      
+      const deg = (360 - (state.rot % 360)) % 360;
+      // 戻るエリア（260度〜332度）
+      if(deg >= 260 && deg < 332) {
+        el.res.innerHTML = '<span class="text-red-500 text-lg">戻る...😭</span>';
+        playFail();
+        if(state.prog > 0) { 
+          state.prog--; 
+          // 内回り・外回りに応じて戻る方向を変える
+          state.curr = (state.curr + (state.dir === 'outer' ? -1 : 1) + 30) % 30; 
+        } else {
+          setTimeout(()=> el.res.innerHTML = '<span class="text-gray-400">まだ進んでない！</span>', 1000);
+        }
+      } else {
+        el.res.innerHTML = '<span class="text-green-400 text-lg">進む！🏃‍♂️</span>';
+        playSuccess();
+        state.prog++; 
+        // 内回り・外回りに応じて進む方向を変える
+        state.curr = (state.curr + (state.dir === 'outer' ? 1 : -1) + 30) % 30;
+      }
+      
+      render();
+      
+      if(state.prog >= 30) { 
+        setTimeout(() => {
+            el.overlay.classList.remove('hidden'); 
+            playClear(); 
+        }, 800);
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
+
+```
