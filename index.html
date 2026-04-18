@@ -4,12 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <script src="https://cdn.tailwindcss.com"></script>
-<title>山手線一周ゲーム</title>
+<title>山手線一周徒歩旅</title>
 <style>
-  body { background: linear-gradient(to bottom, #0f172a, #1e1b4b, #000000); color: white; font-family: sans-serif; overflow-x: hidden; touch-action: manipulation; }
+  body { background: linear-gradient(to bottom, #0f172a, #1e1b4b, #000000); color: white; font-family: sans-serif; overflow-x: hidden; touch-action: manipulation; transition: background-color 0.1s; }
   .station-circle { position: relative; width: 320px; height: 320px; border: 10px solid #84cc16; border-radius: 50%; margin: 20px auto; box-shadow: 0 0 20px rgba(132, 204, 22, 0.4); }
   
-  /* ↓ここで絶対に縦書きにならないように強制しています！ */
   .station { position: absolute; transform: translate(-50%, -50%); background: white; padding: 2px 5px; border-radius: 4px; border: 1.5px solid #84cc16; display: flex; flex-direction: column; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 10; width: max-content !important; white-space: nowrap !important; }
   
   .station.current { background: #fef08a; border: 2.5px solid #ef4444; transform: translate(-50%, -50%) scale(1.2); z-index: 30; animation: pulse 1.5s infinite; }
@@ -19,13 +18,33 @@
   .station-en { color: #65a30d; font-size: 6px; font-weight: 700; white-space: nowrap !important; line-height: 1.2; display: block; }
   
   .roulette-wheel { position: relative; width: 200px; height: 200px; border-radius: 50%; background: conic-gradient(from 260deg, #b91c1c 0% 20%, #15803d 20% 100%); border: 5px solid #4b5563; transition: transform 3.5s cubic-bezier(0.1, 0.8, 0.1, 1); margin: 0 auto; }
-  .text-outline { text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000; }
+  .text-outline { text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0px 2px 4px rgba(0,0,0,0.8); }
   .control-panel { background: rgba(0, 0, 0, 0.6); border-radius: 10px; padding: 10px; margin: 10px auto; width: 95%; max-width: 500px; font-size: 14px; }
   select, input[type="radio"] { cursor: pointer; }
+
+  /* 絶望のフラッシュエフェクト */
+  @keyframes despair-flash {
+      0%, 20%, 40%, 60%, 80%, 100% { background-color: rgba(255, 0, 0, 0.3); }
+      10%, 30%, 50%, 70%, 90% { background-color: rgba(0, 0, 0, 0.8); }
+  }
+  .flash-active::after {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 100;
+      animation: despair-flash 1.5s ease-out forwards;
+  }
 </style>
 </head>
-<body class="flex flex-col items-center py-4 min-h-screen">
-  <h1 class="text-2xl font-black text-green-400 text-outline italic">山手線一周ゲーム</h1>
+<body class="flex flex-col items-center py-4 min-h-screen relative" id="main-body">
+  
+  <!-- タイトルとサブタイトル部分 -->
+  <div class="text-center w-full px-2 mb-2">
+    <h1 class="text-3xl font-black text-green-400 text-outline italic tracking-widest" style="font-family: 'Impact', sans-serif;">山手線一周徒歩旅</h1>
+    <p class="text-sm font-bold text-red-500 text-outline mt-2 animate-pulse tracking-wider">駅に着いたら… 地獄のルーレット発動!!</p>
+    <p class="text-xs font-bold text-yellow-400 text-outline mt-1 tracking-wider">果たして宿泊無しで長野に帰れるか!!</p>
+  </div>
   
   <div class="control-panel">
     <div class="flex flex-wrap justify-between items-center gap-2">
@@ -102,18 +121,44 @@
       playTone(1046.50, n+0.45, 0.6, 'sine', 0.3);
     }
 
-    function playFail() {
+    // より絶望的なサウンドに変更
+    function playDespair() {
       const n = audioCtx.currentTime;
-      playTone(523.25, n, 0.3, 'sawtooth', 0.5); 
-      playTone(466.16, n+0.3, 0.3, 'sawtooth', 0.5); 
-      playTone(415.30, n+0.6, 0.3, 'sawtooth', 0.5);
-      const o1 = audioCtx.createOscillator(), o2 = audioCtx.createOscillator(), g = audioCtx.createGain();
-      o1.type='sawtooth'; o2.type='square';
-      o1.frequency.setValueAtTime(392.00, n+0.9); o1.frequency.exponentialRampToValueAtTime(150, n+2.0);
-      o2.frequency.setValueAtTime(405.00, n+0.9); o2.frequency.exponentialRampToValueAtTime(140, n+2.0);
-      g.gain.setValueAtTime(0, n+0.9); g.gain.linearRampToValueAtTime(0.6, n+0.95); g.gain.exponentialRampToValueAtTime(0.01, n+2.0);
-      o1.connect(g); o2.connect(g); g.connect(audioCtx.destination);
-      o1.start(n+0.9); o2.start(n+0.9); o1.stop(n+2.0); o2.stop(n+2.0);
+      
+      // 不気味な低音のうなり
+      const osc1 = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      osc1.type = 'sawtooth';
+      osc2.type = 'square';
+      
+      // 音が急激に下がっていく（奈落に落ちるイメージ）
+      osc1.frequency.setValueAtTime(200, n);
+      osc1.frequency.exponentialRampToValueAtTime(20, n + 2.0);
+      
+      osc2.frequency.setValueAtTime(205, n); // 少しずらして不協和音に
+      osc2.frequency.exponentialRampToValueAtTime(22, n + 2.0);
+      
+      // 音量の変化（最初は強く、徐々に消える）
+      gainNode.gain.setValueAtTime(0, n);
+      gainNode.gain.linearRampToValueAtTime(0.8, n + 0.1);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, n + 2.5);
+      
+      osc1.connect(gainNode);
+      osc2.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      osc1.start(n);
+      osc2.start(n);
+      osc1.stop(n + 2.5);
+      osc2.stop(n + 2.5);
+
+      // 高音の悲鳴のような音を重ねる
+      setTimeout(() => {
+          playTone(800, audioCtx.currentTime, 0.2, 'sawtooth', 0.3);
+          playTone(750, audioCtx.currentTime + 0.1, 0.3, 'sawtooth', 0.3);
+      }, 100);
     }
 
     function playClear() {
@@ -153,7 +198,8 @@
       wheel: document.getElementById('wheel'), 
       btn: document.getElementById('spin-btn'), 
       res: document.getElementById('res-display'), 
-      overlay: document.getElementById('clear-overlay') 
+      overlay: document.getElementById('clear-overlay'),
+      body: document.getElementById('main-body')
     };
 
     function init() {
@@ -228,8 +274,13 @@
       
       const deg = (360 - (state.rot % 360)) % 360;
       if(deg >= 260 && deg < 332) {
-        el.res.innerHTML = '<span class="text-red-500 text-lg">戻る...😭</span>';
-        playFail();
+        el.res.innerHTML = '<span class="text-red-500 text-lg font-black tracking-widest drop-shadow-[0_0_10px_rgba(255,0,0,0.8)]">戻る...🥶</span>';
+        
+        // 絶望サウンドとフラッシュエフェクトを実行
+        playDespair();
+        el.body.classList.add('flash-active');
+        setTimeout(() => el.body.classList.remove('flash-active'), 1500);
+
         if(state.prog > 0) { 
           state.prog--; 
           state.curr = (state.curr + (state.dir === 'outer' ? -1 : 1) + 30) % 30; 
@@ -237,7 +288,7 @@
           setTimeout(()=> el.res.innerHTML = '<span class="text-gray-400">まだ進んでない！</span>', 1000);
         }
       } else {
-        el.res.innerHTML = '<span class="text-green-400 text-lg">進む！🏃‍♂️</span>';
+        el.res.innerHTML = '<span class="text-green-400 text-lg font-bold">進む！🏃‍♂️</span>';
         playSuccess();
         state.prog++; 
         state.curr = (state.curr + (state.dir === 'outer' ? 1 : -1) + 30) % 30;
