@@ -59,6 +59,8 @@
     <div class="flex justify-around mt-3 border-t border-gray-700 pt-2">
       <div class="text-center"><p class="text-[10px] text-gray-400">現在地</p><p id="curr-name" class="font-bold text-red-400 text-base">-</p></div>
       <div class="text-center"><p class="text-[10px] text-gray-400">進んだ駅数</p><p id="prog-count" class="font-bold text-green-400 text-base">0/30</p></div>
+      <!-- ★ 戻った回数を追加 ★ -->
+      <div class="text-center"><p class="text-[10px] text-gray-400">戻った回数</p><p id="fail-count" class="font-bold text-red-500 text-base">0回</p></div>
     </div>
   </div>
 
@@ -180,13 +182,15 @@
       {ja:"御徒町",en:"Okachimachi"}, {ja:"秋葉原",en:"Akihabara"}, {ja:"神田",en:"Kanda"}
     ];
     
-    let state = { start:0, curr:0, prog:0, rot:0, spinning:false, dir:'outer' };
+    // ★ failCount（戻った回数）をステートに追加 ★
+    let state = { start:0, curr:0, prog:0, failCount:0, rot:0, spinning:false, dir:'outer' };
     
     const el = { 
       circle: document.getElementById('circle'), 
       select: document.getElementById('start-station'), 
       name: document.getElementById('curr-name'), 
-      count: document.getElementById('prog-count'), 
+      count: document.getElementById('prog-count'),
+      failCount: document.getElementById('fail-count'), // 追加
       wheel: document.getElementById('wheel'), 
       btn: document.getElementById('spin-btn'), 
       res: document.getElementById('res-display'), 
@@ -203,17 +207,23 @@
       });
       render();
       el.select.onchange = e => { 
-        if(state.prog > 0 && !confirm("リセットしますか？")) {
+        if((state.prog > 0 || state.failCount > 0) && !confirm("リセットしますか？")) {
             e.target.value = state.start; return;
         }
-        state.start = state.curr = parseInt(e.target.value); state.prog = 0; render(); 
+        state.start = state.curr = parseInt(e.target.value); 
+        state.prog = 0; 
+        state.failCount = 0; // 追加
+        render(); 
       };
       document.querySelectorAll('input[name="dir"]').forEach(r => {
         r.onchange = e => { 
-          if(state.prog > 0 && !confirm("リセットしますか？")) {
+          if((state.prog > 0 || state.failCount > 0) && !confirm("リセットしますか？")) {
             document.querySelector(`input[name="dir"][value="${state.dir}"]`).checked = true; return;
           }
-          state.dir = e.target.value; state.prog = 0; render(); 
+          state.dir = e.target.value; 
+          state.prog = 0; 
+          state.failCount = 0; // 追加
+          render(); 
         }
       });
       el.btn.onclick = spin;
@@ -234,8 +244,6 @@
         div.innerHTML = `<span class="station-ja">${s.ja}</span>`;
         
         let baseRad = (i / 30 * 360 + 15) * Math.PI / 180;
-        
-        // ★修正ポイント：係数を 0.22 から 0.12 に減らし、効果を緩やかにしました！★
         let rad = baseRad - 0.12 * Math.sin(2 * baseRad);
         
         div.style.left = (centerX + radiusX * Math.cos(rad)) + 'px';
@@ -244,6 +252,7 @@
       });
       el.name.textContent = stations[state.curr].ja;
       el.count.textContent = `${state.prog}/30`;
+      el.failCount.textContent = `${state.failCount}回`; // 追加
     }
 
     function spin() {
@@ -280,6 +289,8 @@
         playDespair();
         el.body.classList.add('flash-active');
         setTimeout(() => el.body.classList.remove('flash-active'), 1500);
+
+        state.failCount++; // 戻った回数をカウントアップ
 
         if(state.prog > 0) { 
           state.prog--; 
