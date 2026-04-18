@@ -7,22 +7,21 @@
 <title>山手線一周徒歩旅</title>
 <style>
   body { background: linear-gradient(to bottom, #0f172a, #1e1b4b, #000000); color: white; font-family: sans-serif; overflow-x: hidden; touch-action: manipulation; transition: background-color 0.1s; }
-  .station-circle { position: relative; width: 320px; height: 320px; border: 10px solid #84cc16; border-radius: 50%; margin: 20px auto; box-shadow: 0 0 20px rgba(132, 204, 22, 0.4); }
   
-  .station { position: absolute; transform: translate(-50%, -50%); background: white; padding: 2px 5px; border-radius: 4px; border: 1.5px solid #84cc16; display: flex; flex-direction: column; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 10; width: max-content !important; white-space: nowrap !important; }
+  .station-circle { position: relative; width: 320px; height: 380px; border: 10px solid #84cc16; border-radius: 50%; margin: 20px auto; box-shadow: 0 0 20px rgba(132, 204, 22, 0.4); }
+  
+  .station { position: absolute; transform: translate(-50%, -50%); background: white; padding: 2px 4px; border-radius: 4px; border: 1.5px solid #84cc16; display: flex; flex-direction: column; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 10; width: max-content !important; white-space: nowrap !important; }
   
   .station.current { background: #fef08a; border: 2.5px solid #ef4444; transform: translate(-50%, -50%) scale(1.2); z-index: 30; animation: pulse 1.5s infinite; }
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
   
-  .station-ja { color: #166534; font-size: 9px; font-weight: 900; white-space: nowrap !important; line-height: 1.2; display: block; }
-  .station-en { color: #65a30d; font-size: 6px; font-weight: 700; white-space: nowrap !important; line-height: 1.2; display: block; }
+  .station-ja { color: #166534; font-size: 10px; font-weight: 900; white-space: nowrap !important; line-height: 1; display: block; }
   
   .roulette-wheel { position: relative; width: 200px; height: 200px; border-radius: 50%; background: conic-gradient(from 260deg, #b91c1c 0% 20%, #15803d 20% 100%); border: 5px solid #4b5563; transition: transform 3.5s cubic-bezier(0.1, 0.8, 0.1, 1); margin: 0 auto; }
   .text-outline { text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0px 2px 4px rgba(0,0,0,0.8); }
   .control-panel { background: rgba(0, 0, 0, 0.6); border-radius: 10px; padding: 10px; margin: 10px auto; width: 95%; max-width: 500px; font-size: 14px; }
   select, input[type="radio"] { cursor: pointer; }
 
-  /* 絶望のフラッシュエフェクト */
   @keyframes despair-flash {
       0%, 20%, 40%, 60%, 80%, 100% { background-color: rgba(255, 0, 0, 0.3); }
       10%, 30%, 50%, 70%, 90% { background-color: rgba(0, 0, 0, 0.8); }
@@ -39,7 +38,6 @@
 </head>
 <body class="flex flex-col items-center py-4 min-h-screen relative" id="main-body">
   
-  <!-- タイトルとサブタイトル部分 -->
   <div class="text-center w-full px-2 mb-2">
     <h1 class="text-3xl font-black text-green-400 text-outline italic tracking-widest" style="font-family: 'Impact', sans-serif;">山手線一周徒歩旅</h1>
     <p class="text-sm font-bold text-red-500 text-outline mt-2 animate-pulse tracking-wider">駅に着いたら… 地獄のルーレット発動!!</p>
@@ -121,11 +119,8 @@
       playTone(1046.50, n+0.45, 0.6, 'sine', 0.3);
     }
 
-    // より絶望的なサウンドに変更
     function playDespair() {
       const n = audioCtx.currentTime;
-      
-      // 不気味な低音のうなり
       const osc1 = audioCtx.createOscillator();
       const osc2 = audioCtx.createOscillator();
       const gainNode = audioCtx.createGain();
@@ -133,14 +128,12 @@
       osc1.type = 'sawtooth';
       osc2.type = 'square';
       
-      // 音が急激に下がっていく（奈落に落ちるイメージ）
       osc1.frequency.setValueAtTime(200, n);
       osc1.frequency.exponentialRampToValueAtTime(20, n + 2.0);
       
-      osc2.frequency.setValueAtTime(205, n); // 少しずらして不協和音に
+      osc2.frequency.setValueAtTime(205, n);
       osc2.frequency.exponentialRampToValueAtTime(22, n + 2.0);
       
-      // 音量の変化（最初は強く、徐々に消える）
       gainNode.gain.setValueAtTime(0, n);
       gainNode.gain.linearRampToValueAtTime(0.8, n + 0.1);
       gainNode.gain.exponentialRampToValueAtTime(0.01, n + 2.5);
@@ -154,7 +147,6 @@
       osc1.stop(n + 2.5);
       osc2.stop(n + 2.5);
 
-      // 高音の悲鳴のような音を重ねる
       setTimeout(() => {
           playTone(800, audioCtx.currentTime, 0.2, 'sawtooth', 0.3);
           playTone(750, audioCtx.currentTime + 0.1, 0.3, 'sawtooth', 0.3);
@@ -230,15 +222,24 @@
     }
 
     function render() {
-      const radius = 150;
+      const centerX = 150; 
+      const centerY = 180; 
+      const radiusX = 155; 
+      const radiusY = 185; 
+      
       el.circle.querySelectorAll('.station').forEach(s => s.remove());
       stations.forEach((s, i) => {
         const div = document.createElement('div'); 
         div.className = 'station' + (i === state.curr ? ' current' : '');
-        div.innerHTML = `<span class="station-ja">${s.ja}</span><span class="station-en">${s.en}</span>`;
-        const rad = (i / 30 * 360 + 15) * Math.PI / 180;
-        div.style.left = (160 + radius * Math.cos(rad)) + 'px';
-        div.style.top = (160 + radius * Math.sin(rad)) + 'px';
+        div.innerHTML = `<span class="station-ja">${s.ja}</span>`;
+        
+        let baseRad = (i / 30 * 360 + 15) * Math.PI / 180;
+        
+        // ★修正ポイント：係数を 0.22 から 0.12 に減らし、効果を緩やかにしました！★
+        let rad = baseRad - 0.12 * Math.sin(2 * baseRad);
+        
+        div.style.left = (centerX + radiusX * Math.cos(rad)) + 'px';
+        div.style.top = (centerY + radiusY * Math.sin(rad)) + 'px';
         el.circle.appendChild(div);
       });
       el.name.textContent = stations[state.curr].ja;
@@ -276,7 +277,6 @@
       if(deg >= 260 && deg < 332) {
         el.res.innerHTML = '<span class="text-red-500 text-lg font-black tracking-widest drop-shadow-[0_0_10px_rgba(255,0,0,0.8)]">戻る...🥶</span>';
         
-        // 絶望サウンドとフラッシュエフェクトを実行
         playDespair();
         el.body.classList.add('flash-active');
         setTimeout(() => el.body.classList.remove('flash-active'), 1500);
