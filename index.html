@@ -59,7 +59,6 @@
     <div class="flex justify-around mt-3 border-t border-gray-700 pt-2">
       <div class="text-center"><p class="text-[10px] text-gray-400">現在地</p><p id="curr-name" class="font-bold text-red-400 text-base">-</p></div>
       <div class="text-center"><p class="text-[10px] text-gray-400">進んだ駅数</p><p id="prog-count" class="font-bold text-green-400 text-base">0/30</p></div>
-      <!-- ★ 戻った回数を追加 ★ -->
       <div class="text-center"><p class="text-[10px] text-gray-400">戻った回数</p><p id="fail-count" class="font-bold text-red-500 text-base">0回</p></div>
     </div>
   </div>
@@ -93,8 +92,26 @@
   </div>
 
   <div id="clear-overlay" class="fixed inset-0 bg-black bg-opacity-95 z-50 flex flex-col items-center justify-center hidden">
-    <h1 class="text-5xl font-black text-yellow-400 mb-4 animate-bounce text-outline">CLEAR!!</h1>
-    <p class="text-white font-bold mb-8 text-lg">山手線一周達成！</p>
+    <h1 class="text-5xl font-black text-yellow-400 mb-2 animate-bounce text-outline">CLEAR!!</h1>
+    <p class="text-white font-bold mb-6 text-lg">山手線一周達成！</p>
+    
+    <!-- ★ここが新しく追加された戦績表示エリアです★ -->
+    <div class="bg-gray-800 border-2 border-yellow-500 rounded-xl p-5 mb-8 w-64 shadow-[0_0_20px_rgba(234,179,8,0.4)]">
+      <h2 class="text-yellow-400 font-bold mb-3 border-b border-gray-600 pb-2 text-center">今回の記録</h2>
+      <div class="flex justify-between items-center my-2">
+        <span class="text-green-400 font-bold text-sm">進んだ回数:</span>
+        <span class="text-white font-black text-xl" id="result-success">0回</span>
+      </div>
+      <div class="flex justify-between items-center my-2">
+        <span class="text-red-400 font-bold text-sm">戻された回数:</span>
+        <span class="text-white font-black text-xl" id="result-fail">0回</span>
+      </div>
+      <div class="flex justify-between items-center mt-4 pt-3 border-t border-gray-600">
+        <span class="text-gray-300 font-bold text-sm">合計ルーレット:</span>
+        <span class="text-yellow-300 font-black text-2xl" id="result-total">0回</span>
+      </div>
+    </div>
+
     <button onclick="location.reload()" class="bg-green-600 hover:bg-green-500 px-8 py-4 rounded-full font-black text-xl shadow-[0_0_15px_rgba(34,197,94,0.6)] transition-all">もう一度遊ぶ</button>
   </div>
 
@@ -182,20 +199,24 @@
       {ja:"御徒町",en:"Okachimachi"}, {ja:"秋葉原",en:"Akihabara"}, {ja:"神田",en:"Kanda"}
     ];
     
-    // ★ failCount（戻った回数）をステートに追加 ★
-    let state = { start:0, curr:0, prog:0, failCount:0, rot:0, spinning:false, dir:'outer' };
+    // ★ successCount（進んだ回数）を追加 ★
+    let state = { start:0, curr:0, prog:0, failCount:0, successCount:0, rot:0, spinning:false, dir:'outer' };
     
     const el = { 
       circle: document.getElementById('circle'), 
       select: document.getElementById('start-station'), 
       name: document.getElementById('curr-name'), 
       count: document.getElementById('prog-count'),
-      failCount: document.getElementById('fail-count'), // 追加
+      failCount: document.getElementById('fail-count'), 
       wheel: document.getElementById('wheel'), 
       btn: document.getElementById('spin-btn'), 
       res: document.getElementById('res-display'), 
       overlay: document.getElementById('clear-overlay'),
-      body: document.getElementById('main-body')
+      body: document.getElementById('main-body'),
+      // クリア画面の要素
+      resSuccess: document.getElementById('result-success'),
+      resFail: document.getElementById('result-fail'),
+      resTotal: document.getElementById('result-total')
     };
 
     function init() {
@@ -212,7 +233,8 @@
         }
         state.start = state.curr = parseInt(e.target.value); 
         state.prog = 0; 
-        state.failCount = 0; // 追加
+        state.failCount = 0;
+        state.successCount = 0;
         render(); 
       };
       document.querySelectorAll('input[name="dir"]').forEach(r => {
@@ -222,7 +244,8 @@
           }
           state.dir = e.target.value; 
           state.prog = 0; 
-          state.failCount = 0; // 追加
+          state.failCount = 0;
+          state.successCount = 0;
           render(); 
         }
       });
@@ -252,7 +275,7 @@
       });
       el.name.textContent = stations[state.curr].ja;
       el.count.textContent = `${state.prog}/30`;
-      el.failCount.textContent = `${state.failCount}回`; // 追加
+      el.failCount.textContent = `${state.failCount}回`; 
     }
 
     function spin() {
@@ -290,7 +313,7 @@
         el.body.classList.add('flash-active');
         setTimeout(() => el.body.classList.remove('flash-active'), 1500);
 
-        state.failCount++; // 戻った回数をカウントアップ
+        state.failCount++;
 
         if(state.prog > 0) { 
           state.prog--; 
@@ -301,14 +324,22 @@
       } else {
         el.res.innerHTML = '<span class="text-green-400 text-lg font-bold">進む！🏃‍♂️</span>';
         playSuccess();
+        
         state.prog++; 
+        state.successCount++; // 進んだ回数をカウントアップ
         state.curr = (state.curr + (state.dir === 'outer' ? 1 : -1) + 30) % 30;
       }
       
       render();
       
+      // クリア判定
       if(state.prog >= 30) { 
         setTimeout(() => {
+            // クリア画面に記録をセット
+            el.resSuccess.textContent = `${state.successCount}回`;
+            el.resFail.textContent = `${state.failCount}回`;
+            el.resTotal.textContent = `${state.successCount + state.failCount}回`;
+            
             el.overlay.classList.remove('hidden'); 
             playClear(); 
         }, 800);
