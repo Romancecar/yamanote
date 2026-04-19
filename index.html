@@ -17,7 +17,6 @@
   
   .station-ja { color: #166534; font-size: 10px; font-weight: 900; white-space: nowrap !important; line-height: 1; display: block; }
   
-  .roulette-wheel { position: relative; width: 200px; height: 200px; border-radius: 50%; background: conic-gradient(from 260deg, #b91c1c 0% 20%, #15803d 20% 100%); border: 5px solid #4b5563; transition: transform 3.5s cubic-bezier(0.1, 0.8, 0.1, 1); margin: 0 auto; }
   .text-outline { text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0px 2px 4px rgba(0,0,0,0.8); }
   .control-panel { background: rgba(0, 0, 0, 0.6); border-radius: 10px; padding: 10px; margin: 10px auto; width: 95%; max-width: 500px; font-size: 14px; }
   select, input[type="radio"] { cursor: pointer; }
@@ -34,6 +33,98 @@
       z-index: 100;
       animation: despair-flash 1.5s ease-out forwards;
   }
+
+  .wood-frame {
+      position: relative;
+      width: 250px;
+      height: 250px;
+      border-radius: 50%;
+      background: #2a1405;
+      border: 15px solid #5c3a21;
+      border-top-color: #7a4f2e;
+      border-left-color: #6a4025;
+      border-bottom-color: #3e2312;
+      border-right-color: #4a2c11;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.9), inset 0 8px 15px rgba(0,0,0,0.9);
+      margin: 0 auto;
+  }
+
+  .roulette-wheel {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      border-radius: 50%;
+      /* 初期は人界モードのグラデーション */
+      background: conic-gradient(from 260deg, #7f1d1d 0% 20%, #14532d 20% 100%);
+      transition: transform 3.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      overflow: hidden;
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.9);
+  }
+
+  .slots-overlay {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: repeating-conic-gradient(
+          transparent 0deg 9.5deg,
+          rgba(0,0,0,0.8) 9.5deg 10deg
+      );
+      z-index: 5;
+  }
+
+  .gold-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 40px; 
+      height: 40px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fffbd6 0%, #bf953f 30%, #5d4a1f 80%, #1a1405 100%);
+      border: 2px solid #e5c05e;
+      box-shadow: 0 5px 10px rgba(0,0,0,0.8), inset 0 0 4px rgba(255,255,255,0.6);
+      z-index: 20;
+  }
+
+  .gold-center-inner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 14px; 
+      height: 14px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fffbd6 0%, #5d4a1f 60%, #1a1405 100%);
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.8), 0 1px 1px rgba(255,255,255,0.5);
+  }
+
+  .gold-needle {
+      position: absolute;
+      top: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 30px solid #e5c05e;
+      z-index: 50;
+      filter: drop-shadow(0 6px 4px rgba(0,0,0,0.8));
+  }
+  .gold-needle::after {
+      content: '';
+      position: absolute;
+      top: -29px;
+      left: -3px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #fffbd6;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  }
+  
+  .shrimp-marker {
+      transition: top 0.5s, left 0.5s;
+  }
 </style>
 </head>
 <body class="flex flex-col items-center py-4 min-h-screen relative" id="main-body">
@@ -41,10 +132,24 @@
   <div class="text-center w-full px-2 mb-2">
     <h1 class="text-3xl font-black text-green-400 text-outline italic tracking-widest" style="font-family: 'Impact', sans-serif;">山手線一周徒歩旅</h1>
     <p class="text-sm font-bold text-red-500 text-outline mt-2 animate-pulse tracking-wider">駅に着いたら… 地獄のルーレット発動!!</p>
-    <p class="text-xs font-bold text-yellow-400 text-outline mt-1 tracking-wider">果たして宿泊無しで長野に帰れるか!!</p>
+    <p class="text-xs font-bold text-yellow-400 text-outline mt-1 tracking-wider">果たしてシュリンプさんは無事に帰れるか!!</p>
   </div>
   
   <div class="control-panel">
+    
+    <!-- ★ 新規追加：天国・人界・地獄モード選択 ★ -->
+    <div class="flex justify-center gap-4 text-sm mb-3 pb-3 border-b border-gray-700 w-full font-bold">
+      <label class="flex items-center gap-1 cursor-pointer text-yellow-300">
+        <input type="radio" name="mode" value="heaven">👼天国
+      </label>
+      <label class="flex items-center gap-1 cursor-pointer text-white">
+        <input type="radio" name="mode" value="human" checked>🚶人界
+      </label>
+      <label class="flex items-center gap-1 cursor-pointer text-red-400">
+        <input type="radio" name="mode" value="hell">👿地獄
+      </label>
+    </div>
+
     <div class="flex flex-wrap justify-between items-center gap-2">
       <div>
         <label class="font-bold text-gray-300">発:</label>
@@ -64,26 +169,35 @@
   </div>
 
   <div class="station-circle" id="circle">
-    <div class="absolute inset-0 m-auto w-24 h-16 bg-white rounded border-2 border-gray-300 flex flex-col items-center justify-center z-0">
-      <span class="text-black font-black text-lg">山手線</span>
-      <span class="text-white font-bold text-[8px] bg-[#84cc16] w-full text-center py-0.5">Yamanote Line</span>
+    <div class="absolute inset-0 m-auto w-24 h-16 bg-white rounded border-2 border-gray-300 flex flex-col items-center justify-center z-0 overflow-hidden px-1">
+      <span id="center-sign-ja" class="text-black font-black text-base whitespace-nowrap">山手線</span>
+      <span id="center-sign-en" class="text-white font-bold text-[8px] bg-[#84cc16] w-full text-center py-0.5 whitespace-nowrap mt-0.5">Yamanote Line</span>
     </div>
   </div>
 
   <div class="mt-6 bg-black bg-opacity-60 p-4 rounded-xl border-2 border-purple-800 flex flex-col items-center w-[95%] max-w-[340px]">
     
-    <div class="relative w-[210px] h-[210px] mt-2">
-      <div style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid #fbbf24; z-index: 50; filter: drop-shadow(0px 4px 2px rgba(0,0,0,0.6));"></div>
+    <div class="wood-frame mt-2">
+      <div class="gold-needle"></div>
       
+      <!-- ルーレット盤面 (モードによって中身が動的に変わる) -->
       <div class="roulette-wheel" id="wheel">
-        <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight" style="transform: translate(-50%, -50%) rotate(296deg) translateY(-60px);">
-          <span class="text-base">戻る</span>
-          <span class="text-sm text-gray-200">20%</span>
+        <div id="wheel-content">
+          <!-- 初期表示用（人界モード） -->
+          <div class="slots-overlay"></div>
+          <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(296deg) translateY(-70px);">
+            <span class="text-lg text-red-200">戻る</span>
+            <span class="text-sm text-gray-300">20%</span>
+          </div>
+          <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight tracking-widest z-10" style="transform: translate(-50%, -50%) rotate(116deg) translateY(-50px);">
+            <span class="text-3xl">進む</span>
+            <span class="text-yellow-300 text-2xl mt-1">80%</span>
+          </div>
         </div>
-        <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight tracking-widest" style="transform: translate(-50%, -50%) rotate(116deg) translateY(-40px);">
-          <span class="text-3xl">進む</span>
-          <span class="text-yellow-300 text-2xl mt-1">80%</span>
-        </div>
+      </div>
+
+      <div class="gold-center">
+        <div class="gold-center-inner"></div>
       </div>
     </div>
 
@@ -93,11 +207,10 @@
 
   <div id="clear-overlay" class="fixed inset-0 bg-black bg-opacity-95 z-50 flex flex-col items-center justify-center hidden">
     <h1 class="text-5xl font-black text-yellow-400 mb-2 animate-bounce text-outline">CLEAR!!</h1>
-    <p class="text-white font-bold mb-6 text-lg">山手線一周達成！</p>
+    <p class="text-white font-bold mb-6 text-lg" id="clear-msg">山手線一周達成！お疲れ様シュリンプさん！</p>
     
-    <!-- ★ここが新しく追加された戦績表示エリアです★ -->
     <div class="bg-gray-800 border-2 border-yellow-500 rounded-xl p-5 mb-8 w-64 shadow-[0_0_20px_rgba(234,179,8,0.4)]">
-      <h2 class="text-yellow-400 font-bold mb-3 border-b border-gray-600 pb-2 text-center">今回の記録</h2>
+      <h2 class="text-yellow-400 font-bold mb-3 border-b border-gray-600 pb-2 text-center">シュリンプさんの記録</h2>
       <div class="flex justify-between items-center my-2">
         <span class="text-green-400 font-bold text-sm">進んだ回数:</span>
         <span class="text-white font-black text-xl" id="result-success">0回</span>
@@ -172,6 +285,20 @@
       }, 100);
     }
 
+    // 長野直行（ワープ）時の奇跡のファンファーレ
+    function playMiracle() {
+      const n = audioCtx.currentTime;
+      const notes = [
+          {f:523.25, t:0}, {f:659.25, t:0.1}, {f:783.99, t:0.2}, {f:1046.50, t:0.3},
+          {f:1318.51, t:0.4}, {f:1567.98, t:0.5}, {f:2093.00, t:0.6}
+      ];
+      notes.forEach(x => {
+          playTone(x.f, n+x.t, 0.15, 'square', 0.4);
+          playTone(x.f, n+x.t, 0.15, 'sine', 0.3);
+      });
+      playTone(2093.00, n+0.7, 1.5, 'square', 0.5);
+    }
+
     function playClear() {
       const n = audioCtx.currentTime;
       const notes = [
@@ -199,8 +326,8 @@
       {ja:"御徒町",en:"Okachimachi"}, {ja:"秋葉原",en:"Akihabara"}, {ja:"神田",en:"Kanda"}
     ];
     
-    // ★ successCount（進んだ回数）を追加 ★
-    let state = { start:0, curr:0, prog:0, failCount:0, successCount:0, rot:0, spinning:false, dir:'outer' };
+    // ★ mode をステートに追加 ★
+    let state = { start:0, curr:0, prog:0, failCount:0, successCount:0, rot:0, spinning:false, dir:'outer', mode:'human' };
     
     const el = { 
       circle: document.getElementById('circle'), 
@@ -209,15 +336,70 @@
       count: document.getElementById('prog-count'),
       failCount: document.getElementById('fail-count'), 
       wheel: document.getElementById('wheel'), 
+      wheelContent: document.getElementById('wheel-content'),
       btn: document.getElementById('spin-btn'), 
       res: document.getElementById('res-display'), 
       overlay: document.getElementById('clear-overlay'),
       body: document.getElementById('main-body'),
-      // クリア画面の要素
       resSuccess: document.getElementById('result-success'),
       resFail: document.getElementById('result-fail'),
-      resTotal: document.getElementById('result-total')
+      resTotal: document.getElementById('result-total'),
+      centerSignJa: document.getElementById('center-sign-ja'),
+      centerSignEn: document.getElementById('center-sign-en'),
+      clearMsg: document.getElementById('clear-msg')
     };
+
+    // モード設定（盤面のグラデーションと文字配置）
+    const wheelConfigs = {
+        heaven: {
+            gradient: 'conic-gradient(from 260deg, #d97706 0% 2.5%, #7f1d1d 2.5% 12.5%, #d97706 12.5% 15%, #14532d 15% 100%)',
+            html: `
+                <div class="slots-overlay"></div>
+                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(265deg) translateY(-85px);">
+                  <span class="text-[10px] text-yellow-300">長野</span>
+                </div>
+                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(287deg) translateY(-70px);">
+                  <span class="text-sm text-red-200">戻る</span><span class="text-[10px] text-gray-300">10%</span>
+                </div>
+                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(310deg) translateY(-85px);">
+                  <span class="text-[10px] text-yellow-300">長野</span>
+                </div>
+                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight tracking-widest z-10" style="transform: translate(-50%, -50%) rotate(107deg) translateY(-50px);">
+                  <span class="text-3xl">進む</span><span class="text-yellow-300 text-2xl mt-1">85%</span>
+                </div>
+            `
+        },
+        human: {
+            gradient: 'conic-gradient(from 260deg, #7f1d1d 0% 20%, #14532d 20% 100%)',
+            html: `
+                <div class="slots-overlay"></div>
+                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(296deg) translateY(-70px);">
+                  <span class="text-lg text-red-200">戻る</span><span class="text-sm text-gray-300">20%</span>
+                </div>
+                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight tracking-widest z-10" style="transform: translate(-50%, -50%) rotate(116deg) translateY(-50px);">
+                  <span class="text-3xl">進む</span><span class="text-yellow-300 text-2xl mt-1">80%</span>
+                </div>
+            `
+        },
+        hell: {
+            gradient: 'conic-gradient(from 260deg, #7f1d1d 0% 30%, #14532d 30% 100%)',
+            html: `
+                <div class="slots-overlay"></div>
+                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(314deg) translateY(-65px);">
+                  <span class="text-2xl text-red-200">戻る</span><span class="text-base text-gray-300">30%</span>
+                </div>
+                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight tracking-widest z-10" style="transform: translate(-50%, -50%) rotate(134deg) translateY(-50px);">
+                  <span class="text-3xl text-gray-300">進む</span><span class="text-yellow-400 text-2xl mt-1">70%</span>
+                </div>
+            `
+        }
+    };
+
+    function updateWheelDisplay() {
+        const config = wheelConfigs[state.mode];
+        el.wheel.style.background = config.gradient;
+        el.wheelContent.innerHTML = config.html;
+    }
 
     function init() {
       stations.forEach((s, i) => { 
@@ -227,31 +409,47 @@
         el.select.appendChild(o); 
       });
       render();
+      
       el.select.onchange = e => { 
         if((state.prog > 0 || state.failCount > 0) && !confirm("リセットしますか？")) {
             e.target.value = state.start; return;
         }
         state.start = state.curr = parseInt(e.target.value); 
-        state.prog = 0; 
-        state.failCount = 0;
-        state.successCount = 0;
+        state.prog = 0; state.failCount = 0; state.successCount = 0;
         render(); 
       };
+
       document.querySelectorAll('input[name="dir"]').forEach(r => {
         r.onchange = e => { 
           if((state.prog > 0 || state.failCount > 0) && !confirm("リセットしますか？")) {
             document.querySelector(`input[name="dir"][value="${state.dir}"]`).checked = true; return;
           }
           state.dir = e.target.value; 
-          state.prog = 0; 
-          state.failCount = 0;
-          state.successCount = 0;
+          state.prog = 0; state.failCount = 0; state.successCount = 0;
           render(); 
         }
       });
+
+      // モード切り替えイベント
+      document.querySelectorAll('input[name="mode"]').forEach(r => {
+        r.onchange = e => {
+          if((state.prog > 0 || state.failCount > 0) && !confirm("難易度を変更すると進行状況がリセットされます。よろしいですか？")) {
+            document.querySelector(`input[name="mode"][value="${state.mode}"]`).checked = true; return;
+          }
+          state.mode = e.target.value;
+          state.start = state.curr = parseInt(el.select.value);
+          state.prog = 0; state.failCount = 0; state.successCount = 0;
+          updateWheelDisplay();
+          render();
+        }
+      });
+
       el.btn.onclick = spin;
       el.name.textContent = stations[state.curr].ja;
       document.getElementById('reset-btn').onclick = () => location.reload();
+      
+      // 初期の盤面を描画
+      updateWheelDisplay();
     }
 
     function render() {
@@ -260,7 +458,8 @@
       const radiusX = 155; 
       const radiusY = 185; 
       
-      el.circle.querySelectorAll('.station').forEach(s => s.remove());
+      el.circle.querySelectorAll('.station, .shrimp-marker').forEach(s => s.remove());
+      
       stations.forEach((s, i) => {
         const div = document.createElement('div'); 
         div.className = 'station' + (i === state.curr ? ' current' : '');
@@ -272,7 +471,30 @@
         div.style.left = (centerX + radiusX * Math.cos(rad)) + 'px';
         div.style.top = (centerY + radiusY * Math.sin(rad)) + 'px';
         el.circle.appendChild(div);
+
+        if (i === state.curr) {
+          const shrimp = document.createElement('div');
+          shrimp.className = 'shrimp-marker absolute transform -translate-x-1/2 -translate-y-1/2 z-40 text-2xl animate-bounce drop-shadow-md';
+          shrimp.innerHTML = '🍤';
+          
+          const sRadiusX = radiusX + 35;
+          const sRadiusY = radiusY + 35;
+          
+          shrimp.style.left = (centerX + sRadiusX * Math.cos(rad)) + 'px';
+          shrimp.style.top = (centerY + sRadiusY * Math.sin(rad)) + 'px';
+          
+          el.circle.appendChild(shrimp);
+        }
       });
+
+      if (state.prog === 0 && state.failCount === 0) {
+        el.centerSignJa.textContent = '山手線';
+        el.centerSignEn.textContent = 'Yamanote Line';
+      } else {
+        el.centerSignJa.textContent = stations[state.curr].ja;
+        el.centerSignEn.textContent = stations[state.curr].en;
+      }
+
       el.name.textContent = stations[state.curr].ja;
       el.count.textContent = `${state.prog}/30`;
       el.failCount.textContent = `${state.failCount}回`; 
@@ -306,43 +528,68 @@
       el.btn.style.opacity = '1';
       
       const deg = (360 - (state.rot % 360)) % 360;
-      if(deg >= 260 && deg < 332) {
+      // offsetDegはグラデーションの開始位置(260度)からの角度(0〜359)
+      const offsetDeg = (deg - 260 + 360) % 360;
+      let resultType = '';
+
+      // モード別判定ロジック
+      if (state.mode === 'heaven') {
+          if (offsetDeg < 9) resultType = 'nagano';        // 0%~2.5% (長野)
+          else if (offsetDeg < 45) resultType = 'fail';    // 2.5%~12.5% (戻る 10%)
+          else if (offsetDeg < 54) resultType = 'nagano';  // 12.5%~15% (長野)
+          else resultType = 'success';                     // 15%~100% (進む 85%)
+      } else if (state.mode === 'human') {
+          if (offsetDeg < 72) resultType = 'fail';         // 0%~20% (戻る)
+          else resultType = 'success';                     // 20%~100% (進む)
+      } else if (state.mode === 'hell') {
+          if (offsetDeg < 108) resultType = 'fail';        // 0%~30% (戻る)
+          else resultType = 'success';                     // 30%~100% (進む)
+      }
+
+      // 結果による処理振り分け
+      if (resultType === 'nagano') {
+        el.res.innerHTML = '<span class="text-yellow-400 text-xl font-black tracking-widest drop-shadow-[0_0_15px_rgba(255,255,0,0.8)] animate-pulse">長野へ直行ワープ!!🚄✨</span>';
+        playMiracle();
+        state.prog = 30; // 即クリア
+        state.successCount++;
+        el.clearMsg.textContent = "奇跡の長野ワープ大成功！！おめでとうシュリンプさん！";
+      } 
+      else if (resultType === 'fail') {
         el.res.innerHTML = '<span class="text-red-500 text-lg font-black tracking-widest drop-shadow-[0_0_10px_rgba(255,0,0,0.8)]">戻る...🥶</span>';
-        
         playDespair();
         el.body.classList.add('flash-active');
         setTimeout(() => el.body.classList.remove('flash-active'), 1500);
 
         state.failCount++;
-
         if(state.prog > 0) { 
           state.prog--; 
           state.curr = (state.curr + (state.dir === 'outer' ? -1 : 1) + 30) % 30; 
         } else {
           setTimeout(()=> el.res.innerHTML = '<span class="text-gray-400">まだ進んでない！</span>', 1000);
         }
-      } else {
+      } 
+      else {
         el.res.innerHTML = '<span class="text-green-400 text-lg font-bold">進む！🏃‍♂️</span>';
         playSuccess();
-        
         state.prog++; 
-        state.successCount++; // 進んだ回数をカウントアップ
+        state.successCount++; 
         state.curr = (state.curr + (state.dir === 'outer' ? 1 : -1) + 30) % 30;
       }
       
       render();
       
-      // クリア判定
       if(state.prog >= 30) { 
         setTimeout(() => {
-            // クリア画面に記録をセット
             el.resSuccess.textContent = `${state.successCount}回`;
             el.resFail.textContent = `${state.failCount}回`;
             el.resTotal.textContent = `${state.successCount + state.failCount}回`;
             
             el.overlay.classList.remove('hidden'); 
-            playClear(); 
-        }, 800);
+            if (resultType !== 'nagano') {
+                playClear();
+                el.clearMsg.textContent = "山手線一周達成！お疲れ様シュリンプさん！";
+            }
+        }, 1500); // ワープ演出を見せるために少し長めに待つ
       }
     }
 
