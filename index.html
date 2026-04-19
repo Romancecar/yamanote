@@ -46,7 +46,6 @@
       animation: double-despair-flash 2s ease-out forwards;
   }
 
-  /* ★ 極太の額縁を廃止し、画面幅ギリギリの350px、極細の金枠に修正しました！ ★ */
   .roulette-frame {
       position: relative;
       width: 350px;
@@ -78,7 +77,6 @@
       z-index: 5;
   }
 
-  /* 中央ドームも350pxルーレットサイズに合わせて拡大 */
   .gold-center {
       position: absolute;
       top: 50%;
@@ -166,10 +164,13 @@
         <label class="flex items-center gap-1"><input type="radio" name="dir" value="outer" checked>外回</label>
         <label class="flex items-center gap-1"><input type="radio" name="dir" value="inner">内回</label>
       </div>
-      <div class="flex gap-1">
-        <button id="toggle-map-btn" class="bg-blue-700 hover:bg-blue-600 px-2 py-1 rounded text-[11px] border border-blue-500 transition-colors font-bold shadow-md">路線図: ON</button>
-        <button id="reset-btn" class="bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-[11px] border border-gray-500 transition-colors shadow-md">リセット</button>
-      </div>
+      <button id="reset-btn" class="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-[11px] border border-gray-500 transition-colors shadow-md text-white font-bold">リセット</button>
+    </div>
+    
+    <div class="flex flex-wrap justify-center gap-1.5 mt-3">
+        <button id="toggle-map-btn" class="bg-blue-700 hover:bg-blue-600 px-2 py-1 rounded text-[11px] border border-blue-500 transition-colors font-bold shadow-md">🗺️ 路線図: ON</button>
+        <button id="toggle-reverse-btn" class="bg-blue-700 hover:bg-blue-600 px-2 py-1 rounded text-[11px] border border-blue-500 transition-colors font-bold shadow-md">🔄 リバース: ON</button>
+        <button id="toggle-prevent-btn" class="bg-blue-700 hover:bg-blue-600 px-2 py-1 rounded text-[11px] border border-blue-500 transition-colors font-bold shadow-md">🛡️ 無限戻り防止: ON</button>
     </div>
 
     <div class="flex justify-around mt-3 border-t border-gray-700 pt-2">
@@ -186,8 +187,7 @@
     </div>
   </div>
 
-  <!-- コンテナ幅を max-w-[420px] にして350pxのルーレットが収まるようにしました -->
-  <div class="mt-6 bg-black bg-opacity-60 p-4 rounded-xl border-2 border-purple-800 flex flex-col items-center w-full max-w-[420px]">
+  <div class="mt-4 bg-black bg-opacity-60 p-4 rounded-xl border-2 border-purple-800 flex flex-col items-center w-full max-w-[420px]">
     
     <div class="roulette-frame mt-2">
       <div class="gold-needle"></div>
@@ -366,7 +366,14 @@
       {ja:"御徒町",en:"Okachimachi"}, {ja:"秋葉原",en:"Akihabara"}, {ja:"神田",en:"Kanda"}
     ];
     
-    let state = { start:0, curr:0, prog:0, failCount:0, successCount:0, rot:0, spinning:false, dir:'outer', mode:'normal', mapVisible:true };
+    // ★ 初期設定を変更: 路線図オフ(false), リバースオフ(false) ★
+    let state = { 
+        start:0, curr:0, prog:0, failCount:0, successCount:0, rot:0, spinning:false, 
+        dir:'outer', mode:'normal', mapVisible:false, wheelFace:'normal',
+        reverseRouletteEnabled: false,
+        preventConsecutiveReturn: true,
+        lastResultWasReturn: false
+    };
     
     const el = { 
       circle: document.getElementById('circle'), 
@@ -386,10 +393,11 @@
       centerSignJa: document.getElementById('center-sign-ja'),
       centerSignEn: document.getElementById('center-sign-en'),
       clearMsg: document.getElementById('clear-msg'),
-      mapToggleBtn: document.getElementById('toggle-map-btn')
+      mapToggleBtn: document.getElementById('toggle-map-btn'),
+      reverseToggleBtn: document.getElementById('toggle-reverse-btn'),
+      preventToggleBtn: document.getElementById('toggle-prevent-btn')
     };
 
-    // ★ 350pxサイズに合わせたレイアウト調整 + テキスト白文字 + バッジなし ★
     const wheelConfigs = {
         easy: {
             gradient: 'conic-gradient(from 260deg, #d97706 0% 2.5%, #7f1d1d 2.5% 17.5%, #d97706 17.5% 20%, #14532d 20% 100%)',
@@ -438,13 +446,62 @@
                   <span class="text-6xl text-gray-300">進む</span><span class="text-yellow-400 text-5xl mt-1">75%</span>
                 </div>
             `
+        },
+        return_method_hell: {
+            gradient: 'repeating-conic-gradient(from 260deg, #c2410c 0% 5%, #4d7c0f 5% 10%)',
+            html: (() => {
+                let h = '<div class="slots-overlay"></div>';
+                for(let i=0; i<10; i++) {
+                    let dWalk = 260 + 9 + (i * 36);
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dWalk}deg) translateY(-140px);"><span class="text-[13px] leading-none text-center">徒<br>歩</span></div>`;
+                    let dTrain = 260 + 27 + (i * 36);
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dTrain}deg) translateY(-140px);"><span class="text-[13px] leading-none text-center">交<br>通</span></div>`;
+                }
+                return h;
+            })()
+        },
+        return_method_normal: {
+            gradient: 'repeating-conic-gradient(from 260deg, #c2410c 0% 4%, #4d7c0f 4% 10%)',
+            html: (() => {
+                let h = '<div class="slots-overlay"></div>';
+                for(let i=0; i<10; i++) {
+                    let dWalk = 260 + 7.2 + (i * 36);
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dWalk}deg) translateY(-145px);"><span class="text-[10px] leading-none text-center">徒歩</span></div>`;
+                    let dTrain = 260 + 25.2 + (i * 36);
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dTrain}deg) translateY(-135px);"><span class="text-[16px] leading-none text-center">交<br>通</span></div>`;
+                }
+                return h;
+            })()
+        },
+        return_method_easy: {
+            gradient: 'repeating-conic-gradient(from 260deg, #c2410c 0% 2.5%, #4d7c0f 2.5% 12.5%)',
+            html: (() => {
+                let h = '<div class="slots-overlay"></div>';
+                for(let i=0; i<8; i++) {
+                    let dWalk = 260 + 4.5 + (i * 45);
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dWalk}deg) translateY(-145px);"><span class="text-[8px] leading-none text-center block transform scale-90">徒歩</span></div>`;
+                    let dTrain = 260 + 27 + (i * 45);
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dTrain}deg) translateY(-130px);"><span class="text-[20px] leading-none text-center">交<br>通</span></div>`;
+                }
+                return h;
+            })()
         }
     };
 
     function updateWheelDisplay() {
-        const config = wheelConfigs[state.mode];
+        const config = wheelConfigs[state.wheelFace];
         el.wheel.style.background = config.gradient;
         el.wheelContent.innerHTML = config.html;
+    }
+
+    function updateToggleBtnUI(btn, isOn, label) {
+        if (isOn) {
+            btn.textContent = label + ': ON';
+            btn.className = "bg-blue-700 hover:bg-blue-600 px-2 py-1 rounded text-[11px] border border-blue-500 transition-colors font-bold shadow-md";
+        } else {
+            btn.textContent = label + ': OFF';
+            btn.className = "bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-[11px] border border-gray-400 transition-colors font-bold shadow-md text-gray-300";
+        }
     }
 
     function init() {
@@ -454,6 +511,13 @@
         o.textContent = s.ja; 
         el.select.appendChild(o); 
       });
+      
+      // ★ トグルボタンと表示の初期状態を state に合わせる ★
+      el.circle.style.display = state.mapVisible ? 'block' : 'none';
+      updateToggleBtnUI(el.mapToggleBtn, state.mapVisible, '🗺️ 路線図');
+      updateToggleBtnUI(el.reverseToggleBtn, state.reverseRouletteEnabled, '🔄 リバース');
+      updateToggleBtnUI(el.preventToggleBtn, state.preventConsecutiveReturn, '🛡️ 無限戻り防止');
+      
       render();
       
       el.select.onchange = e => { 
@@ -461,7 +525,7 @@
             e.target.value = state.start; return;
         }
         state.start = state.curr = parseInt(e.target.value); 
-        state.prog = 0; state.failCount = 0; state.successCount = 0;
+        state.prog = 0; state.failCount = 0; state.successCount = 0; state.lastResultWasReturn = false;
         render(); 
       };
 
@@ -471,7 +535,7 @@
             document.querySelector(`input[name="dir"][value="${state.dir}"]`).checked = true; return;
           }
           state.dir = e.target.value; 
-          state.prog = 0; state.failCount = 0; state.successCount = 0;
+          state.prog = 0; state.failCount = 0; state.successCount = 0; state.lastResultWasReturn = false;
           render(); 
         }
       });
@@ -482,8 +546,9 @@
             document.querySelector(`input[name="mode"][value="${state.mode}"]`).checked = true; return;
           }
           state.mode = e.target.value;
+          state.wheelFace = state.mode;
           state.start = state.curr = parseInt(el.select.value);
-          state.prog = 0; state.failCount = 0; state.successCount = 0;
+          state.prog = 0; state.failCount = 0; state.successCount = 0; state.lastResultWasReturn = false;
           updateWheelDisplay();
           render();
         }
@@ -492,14 +557,17 @@
       el.mapToggleBtn.onclick = () => {
         state.mapVisible = !state.mapVisible;
         el.circle.style.display = state.mapVisible ? 'block' : 'none';
-        
-        if (state.mapVisible) {
-            el.mapToggleBtn.textContent = '路線図: ON';
-            el.mapToggleBtn.className = "bg-blue-700 hover:bg-blue-600 px-2 py-1 rounded text-[11px] border border-blue-500 transition-colors font-bold shadow-md";
-        } else {
-            el.mapToggleBtn.textContent = '路線図: OFF';
-            el.mapToggleBtn.className = "bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-[11px] border border-gray-400 transition-colors font-bold shadow-md text-gray-300";
-        }
+        updateToggleBtnUI(el.mapToggleBtn, state.mapVisible, '🗺️ 路線図');
+      };
+
+      el.reverseToggleBtn.onclick = () => {
+        state.reverseRouletteEnabled = !state.reverseRouletteEnabled;
+        updateToggleBtnUI(el.reverseToggleBtn, state.reverseRouletteEnabled, '🔄 リバース');
+      };
+
+      el.preventToggleBtn.onclick = () => {
+        state.preventConsecutiveReturn = !state.preventConsecutiveReturn;
+        updateToggleBtnUI(el.preventToggleBtn, state.preventConsecutiveReturn, '🛡️ 無限戻り防止');
       };
 
       el.btn.onclick = spin;
@@ -557,15 +625,57 @@
       el.failCount.textContent = `${state.failCount}回`; 
     }
 
+    function getResultTypeForAngle(offsetDeg, mode) {
+      if (mode === 'easy') {
+          if (offsetDeg < 9) return 'nagano';        
+          if (offsetDeg < 63) return 'fail';    
+          if (offsetDeg < 72) return 'nagano';  
+          return 'success';                     
+      } else if (mode === 'normal') {
+          if (offsetDeg < 72) return 'fail';         
+          return 'success';                     
+      } else if (mode === 'hell') {
+          if (offsetDeg < 7.2) return 'double_fail';      
+          if (offsetDeg < 10.8) return 'nagano';          
+          if (offsetDeg < 90) return 'fail';              
+          return 'success';                               
+      }
+    }
+
     function spin() {
       if(state.spinning) return; 
+      
+      if(state.wheelFace.startsWith('return_method')) {
+          state.wheelFace = state.mode;
+          updateWheelDisplay();
+      }
+
       state.spinning = true; el.btn.disabled = true;
       el.btn.style.opacity = '0.7';
       el.res.innerHTML = '<span class="text-white animate-pulse">判定中...</span>';
       
       if(audioCtx.state === 'suspended') audioCtx.resume();
 
-      const moveRot = (Math.floor(Math.random() * 4 + 4) * 360) + Math.floor(Math.random() * 360);
+      let moveRot = 0;
+      let validAngle = false;
+
+      while(!validAngle) {
+          moveRot = (Math.floor(Math.random() * 4 + 4) * 360) + Math.floor(Math.random() * 360);
+          let tempRot = state.rot + moveRot;
+          let deg = (360 - (tempRot % 360)) % 360;
+          let offsetDeg = (deg - 260 + 360) % 360;
+          
+          let resType = getResultTypeForAngle(offsetDeg, state.mode);
+
+          if (state.preventConsecutiveReturn && state.lastResultWasReturn) {
+              if (resType !== 'fail' && resType !== 'double_fail') {
+                  validAngle = true; 
+              }
+          } else {
+              validAngle = true; 
+          }
+      }
+
       state.rot += moveRot; 
       el.wheel.style.transform = `rotate(${state.rot}deg)`;
       
@@ -577,7 +687,6 @@
         if (elapsed >= duration) return; 
         
         let progress = elapsed / duration;
-        
         let nextTick = 30 + Math.pow(progress, 2.5) * 400;
         
         playTone(1000 - (progress * 400), audioCtx.currentTime, 0.02, 'square', 0.05);
@@ -591,75 +700,89 @@
       setTimeout(finishSpin, duration);
     }
 
+    function executeReturn(backSteps) {
+        let actualSteps = Math.min(backSteps, state.prog); 
+        
+        if (state.prog > 0) { 
+            state.prog -= actualSteps; 
+            state.curr = (state.curr + (state.dir === 'outer' ? -actualSteps : actualSteps) + 30) % 30; 
+            
+            if (state.prog === 0) {
+                setTimeout(()=> el.res.innerHTML += '<br><span class="text-gray-400 text-sm">（スタート駅まで戻された）</span>', 1000);
+            }
+        } else {
+            setTimeout(()=> el.res.innerHTML = '<span class="text-gray-400">まだ進んでない！</span>', 1000);
+        }
+        
+        render();
+        state.spinning = false; el.btn.disabled = false; el.btn.style.opacity = '1';
+    }
+
     function finishSpin() {
-      state.spinning = false; el.btn.disabled = false;
-      el.btn.style.opacity = '1';
-      
       const deg = (360 - (state.rot % 360)) % 360;
       const offsetDeg = (deg - 260 + 360) % 360;
-      let resultType = '';
-
-      if (state.mode === 'easy') {
-          if (offsetDeg < 9) resultType = 'nagano';        
-          else if (offsetDeg < 63) resultType = 'fail';    
-          else if (offsetDeg < 72) resultType = 'nagano';  
-          else resultType = 'success';                     
-      } else if (state.mode === 'normal') {
-          if (offsetDeg < 72) resultType = 'fail';         
-          else resultType = 'success';                     
-      } else if (state.mode === 'hell') {
-          if (offsetDeg < 7.2) resultType = 'double_fail';      // 0%~2% (2駅戻る)
-          else if (offsetDeg < 10.8) resultType = 'nagano';     // 2%~3% (長野ワープ)
-          else if (offsetDeg < 90) resultType = 'fail';         // 3%~25% (1駅戻る 22%)
-          else resultType = 'success';                          // 25%~100% (進む 75%)
-      }
+      let resultType = getResultTypeForAngle(offsetDeg, state.mode);
 
       if (resultType === 'nagano') {
+        state.lastResultWasReturn = false; 
         el.res.innerHTML = '<span class="text-yellow-400 text-xl font-black tracking-widest drop-shadow-[0_0_15px_rgba(255,255,0,0.8)] animate-pulse">長野へ直行ワープ!!🚄✨</span>';
         playMiracle();
         state.prog = 30; 
         state.successCount++;
         el.clearMsg.textContent = "奇跡の長野ワープ大成功！！おめでとうシュリンプ🍤！";
+        
+        state.spinning = false; el.btn.disabled = false; el.btn.style.opacity = '1';
       } 
-      else if (resultType === 'double_fail') {
-        el.res.innerHTML = '<span class="text-purple-500 text-xl font-black tracking-widest drop-shadow-[0_0_10px_rgba(128,0,128,0.8)]">２駅戻る...😱</span>';
-        playDoubleDespair(); 
-        el.body.classList.add('double-flash-active');
-        setTimeout(() => el.body.classList.remove('double-flash-active'), 2000);
+      else if (resultType === 'fail' || resultType === 'double_fail') {
+        state.lastResultWasReturn = true; 
+        let backSteps = (resultType === 'double_fail') ? 2 : 1;
+        
+        if (resultType === 'double_fail') {
+            el.res.innerHTML = '<span class="text-purple-500 text-xl font-black tracking-widest drop-shadow-[0_0_10px_rgba(128,0,128,0.8)]">２駅戻る...😱</span>';
+            playDoubleDespair(); 
+            el.body.classList.add('double-flash-active');
+            setTimeout(() => el.body.classList.remove('double-flash-active'), 2000);
+        } else {
+            el.res.innerHTML = '<span class="text-red-500 text-lg font-black tracking-widest drop-shadow-[0_0_10px_rgba(255,0,0,0.8)]">戻る...🥶</span>';
+            playDespair();
+            el.body.classList.add('flash-active');
+            setTimeout(() => el.body.classList.remove('flash-active'), 1500);
+        }
+
+        if (state.prog === 0) {
+            setTimeout(() => {
+                el.res.innerHTML = '<span class="text-green-400 text-lg font-bold drop-shadow-md">まだ進んでいないのでセーフ！💨</span>';
+                state.spinning = false; 
+                el.btn.disabled = false; 
+                el.btn.style.opacity = '1';
+                render();
+            }, 2000);
+            return;
+        }
 
         state.failCount++;
 
-        if(state.prog > 1) { 
-          state.prog -= 2; 
-          state.curr = (state.curr + (state.dir === 'outer' ? -2 : 2) + 30) % 30; 
-        } else if (state.prog === 1) {
-          state.prog--; 
-          state.curr = (state.curr + (state.dir === 'outer' ? -1 : 1) + 30) % 30; 
-          setTimeout(()=> el.res.innerHTML = '<span class="text-gray-400">スタート駅まで戻された...</span>', 1000);
+        if (state.reverseRouletteEnabled) {
+            setTimeout(() => {
+                startReturnMethodSpin(backSteps);
+            }, 2500);
         } else {
-          setTimeout(()=> el.res.innerHTML = '<span class="text-gray-400">まだ進んでない！</span>', 1000);
+            setTimeout(() => {
+                executeReturn(backSteps);
+            }, 1500); 
         }
+
+        return; 
       }
-      else if (resultType === 'fail') {
-        el.res.innerHTML = '<span class="text-red-500 text-lg font-black tracking-widest drop-shadow-[0_0_10px_rgba(255,0,0,0.8)]">戻る...🥶</span>';
-        playDespair();
-        el.body.classList.add('flash-active');
-        setTimeout(() => el.body.classList.remove('flash-active'), 1500);
-
-        state.failCount++;
-        if(state.prog > 0) { 
-          state.prog--; 
-          state.curr = (state.curr + (state.dir === 'outer' ? -1 : 1) + 30) % 30; 
-        } else {
-          setTimeout(()=> el.res.innerHTML = '<span class="text-gray-400">まだ進んでない！</span>', 1000);
-        }
-      } 
       else {
+        state.lastResultWasReturn = false; 
         el.res.innerHTML = '<span class="text-green-400 text-lg font-bold">進む！🏃‍♂️</span>';
         playSuccess();
         state.prog++; 
         state.successCount++; 
         state.curr = (state.curr + (state.dir === 'outer' ? 1 : -1) + 30) % 30;
+        
+        state.spinning = false; el.btn.disabled = false; el.btn.style.opacity = '1';
       }
       
       render();
@@ -677,6 +800,67 @@
             }
         }, 1500); 
       }
+    }
+
+    function startReturnMethodSpin(backSteps) {
+        state.wheelFace = 'return_method_' + state.mode;
+        updateWheelDisplay();
+        
+        el.res.innerHTML = '<span class="text-white animate-pulse tracking-widest text-lg drop-shadow-md">移動手段判定中...</span>';
+        
+        const moveRot = -(Math.floor(Math.random() * 4 + 4) * 360) - Math.floor(Math.random() * 360);
+        state.rot += moveRot; 
+        el.wheel.style.transform = `rotate(${state.rot}deg)`;
+        
+        let start = Date.now();
+        const duration = 3500;
+
+        function tick() {
+            let elapsed = Date.now() - start;
+            if (elapsed >= duration) return; 
+            let progress = elapsed / duration;
+            let nextTick = 30 + Math.pow(progress, 2.5) * 400;
+            
+            playTone(1200 - (progress * 400), audioCtx.currentTime, 0.02, 'sine', 0.05);
+            playTone(1800 - (progress * 400), audioCtx.currentTime, 0.01, 'square', 0.03);
+
+            setTimeout(tick, nextTick);
+        }
+        
+        tick(); 
+        setTimeout(() => finishReturnMethodSpin(backSteps), duration);
+    }
+
+    function finishReturnMethodSpin(backSteps) {
+        const deg = (360 - (((state.rot % 360) + 360) % 360)) % 360; 
+        const offsetDeg = (deg - 260 + 360) % 360;
+        
+        let method = '';
+        
+        if (state.mode === 'easy') {
+            let mod = offsetDeg % 45;
+            method = (mod < 9) ? 'walk' : 'train';
+        } else if (state.mode === 'normal') {
+            let mod = offsetDeg % 36;
+            method = (mod < 14.4) ? 'walk' : 'train';
+        } else {
+            let mod = offsetDeg % 36;
+            method = (mod < 18) ? 'walk' : 'train';
+        }
+
+        if (method === 'train') {
+            el.res.innerHTML = `<span class="text-lime-400 text-xl font-black tracking-widest drop-shadow-[0_0_10px_rgba(132,204,22,0.8)]">交通機関で${backSteps}駅戻る！🚌✨</span>`;
+            playSuccess(); 
+        } else {
+            el.res.innerHTML = `<span class="text-orange-500 text-xl font-black tracking-widest drop-shadow-[0_0_10px_rgba(249,115,22,0.8)]">徒歩で${backSteps}駅戻る...🚶‍♂️💦</span>`;
+            playDespair(); 
+            el.body.classList.add('flash-active');
+            setTimeout(() => el.body.classList.remove('flash-active'), 1500);
+        }
+
+        setTimeout(() => {
+            executeReturn(backSteps);
+        }, 1500);
     }
 
     init();
