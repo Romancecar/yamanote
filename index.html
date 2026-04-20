@@ -366,7 +366,6 @@
       {ja:"御徒町",en:"Okachimachi"}, {ja:"秋葉原",en:"Akihabara"}, {ja:"神田",en:"Kanda"}
     ];
     
-    // ★ 初期設定を変更: 路線図オフ(false), リバースオフ(false) ★
     let state = { 
         start:0, curr:0, prog:0, failCount:0, successCount:0, rot:0, spinning:false, 
         dir:'outer', mode:'normal', mapVisible:false, wheelFace:'normal',
@@ -398,18 +397,19 @@
       preventToggleBtn: document.getElementById('toggle-prevent-btn')
     };
 
+    // ★ Easyモードの交通を80%から70%に減らし（徒歩30%に）、綺麗に階段になるように調整 ★
     const wheelConfigs = {
         easy: {
-            gradient: 'conic-gradient(from 260deg, #d97706 0% 2.5%, #7f1d1d 2.5% 17.5%, #d97706 17.5% 20%, #14532d 20% 100%)',
+            gradient: 'conic-gradient(from 260deg, #d97706 0% 1.25%, #7f1d1d 1.25% 18.75%, #d97706 18.75% 20%, #14532d 20% 100%)',
             html: `
                 <div class="slots-overlay"></div>
-                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(264.5deg) translateY(-140px);">
+                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(262.2deg) translateY(-140px);">
                   <span class="text-[12px] text-yellow-300 text-center leading-none">長<br>野</span>
                 </div>
                 <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(296deg) translateY(-110px);">
-                  <span class="text-3xl text-red-200">戻る</span><span class="text-sm text-gray-300">15%</span>
+                  <span class="text-3xl text-red-200">戻る</span><span class="text-sm text-gray-300">17.5%</span>
                 </div>
-                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(327.5deg) translateY(-140px);">
+                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(329.8deg) translateY(-140px);">
                   <span class="text-[12px] text-yellow-300 text-center leading-none">長<br>野</span>
                 </div>
                 <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight tracking-widest z-10" style="transform: translate(-50%, -50%) rotate(116deg) translateY(-85px);">
@@ -453,9 +453,9 @@
                 let h = '<div class="slots-overlay"></div>';
                 for(let i=0; i<10; i++) {
                     let dWalk = 260 + 9 + (i * 36);
-                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dWalk}deg) translateY(-140px);"><span class="text-[13px] leading-none text-center">徒<br>歩</span></div>`;
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dWalk}deg) translateY(-135px);"><span class="text-[13px] leading-none text-center">徒<br>歩</span></div>`;
                     let dTrain = 260 + 27 + (i * 36);
-                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dTrain}deg) translateY(-140px);"><span class="text-[13px] leading-none text-center">交<br>通</span></div>`;
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dTrain}deg) translateY(-135px);"><span class="text-[13px] leading-none text-center">交<br>通</span></div>`;
                 }
                 return h;
             })()
@@ -466,22 +466,23 @@
                 let h = '<div class="slots-overlay"></div>';
                 for(let i=0; i<10; i++) {
                     let dWalk = 260 + 7.2 + (i * 36);
-                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dWalk}deg) translateY(-145px);"><span class="text-[10px] leading-none text-center">徒歩</span></div>`;
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dWalk}deg) translateY(-135px);"><span class="text-[11px] leading-none text-center">徒<br>歩</span></div>`;
                     let dTrain = 260 + 25.2 + (i * 36);
-                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dTrain}deg) translateY(-135px);"><span class="text-[16px] leading-none text-center">交<br>通</span></div>`;
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dTrain}deg) translateY(-135px);"><span class="text-[15px] leading-none text-center">交<br>通</span></div>`;
                 }
                 return h;
             })()
         },
+        // ★ Easy: 徒歩30% / 交通70% に調整 (1セット45度中、13.5度が徒歩) ★
         return_method_easy: {
-            gradient: 'repeating-conic-gradient(from 260deg, #c2410c 0% 2.5%, #4d7c0f 2.5% 12.5%)',
+            gradient: 'repeating-conic-gradient(from 260deg, #c2410c 0% 3.75%, #4d7c0f 3.75% 12.5%)',
             html: (() => {
                 let h = '<div class="slots-overlay"></div>';
                 for(let i=0; i<8; i++) {
-                    let dWalk = 260 + 4.5 + (i * 45);
-                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dWalk}deg) translateY(-145px);"><span class="text-[8px] leading-none text-center block transform scale-90">徒歩</span></div>`;
-                    let dTrain = 260 + 27 + (i * 45);
-                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dTrain}deg) translateY(-130px);"><span class="text-[20px] leading-none text-center">交<br>通</span></div>`;
+                    let dWalk = 260 + 6.75 + (i * 45); // 13.5の半分
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dWalk}deg) translateY(-135px);"><span class="text-[9px] leading-none text-center">徒<br>歩</span></div>`;
+                    let dTrain = 260 + 29.25 + (i * 45); // 13.5 + 31.5の半分
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dTrain}deg) translateY(-135px);"><span class="text-[16px] leading-none text-center">交<br>通</span></div>`;
                 }
                 return h;
             })()
@@ -512,7 +513,6 @@
         el.select.appendChild(o); 
       });
       
-      // ★ トグルボタンと表示の初期状態を state に合わせる ★
       el.circle.style.display = state.mapVisible ? 'block' : 'none';
       updateToggleBtnUI(el.mapToggleBtn, state.mapVisible, '🗺️ 路線図');
       updateToggleBtnUI(el.reverseToggleBtn, state.reverseRouletteEnabled, '🔄 リバース');
@@ -627,10 +627,10 @@
 
     function getResultTypeForAngle(offsetDeg, mode) {
       if (mode === 'easy') {
-          if (offsetDeg < 9) return 'nagano';        
-          if (offsetDeg < 63) return 'fail';    
-          if (offsetDeg < 72) return 'nagano';  
-          return 'success';                     
+          if (offsetDeg < 4.5) return 'nagano';        // 1.25%
+          if (offsetDeg < 67.5) return 'fail';         // 17.5% (4.5 + 63)
+          if (offsetDeg < 72) return 'nagano';         // 1.25% (67.5 + 4.5)
+          return 'success';                            // 80% (72 ~ 360)
       } else if (mode === 'normal') {
           if (offsetDeg < 72) return 'fail';         
           return 'success';                     
@@ -837,9 +837,10 @@
         
         let method = '';
         
+        // ★ Easyの判定を 徒歩30% (13.5度) / 交通70% に修正 ★
         if (state.mode === 'easy') {
             let mod = offsetDeg % 45;
-            method = (mod < 9) ? 'walk' : 'train';
+            method = (mod < 13.5) ? 'walk' : 'train';
         } else if (state.mode === 'normal') {
             let mod = offsetDeg % 36;
             method = (mod < 14.4) ? 'walk' : 'train';
@@ -849,7 +850,7 @@
         }
 
         if (method === 'train') {
-            el.res.innerHTML = `<span class="text-lime-400 text-xl font-black tracking-widest drop-shadow-[0_0_10px_rgba(132,204,22,0.8)]">交通機関で${backSteps}駅戻る！🚌✨</span>`;
+            el.res.innerHTML = `<span class="text-lime-400 text-xl font-black tracking-widest drop-shadow-[0_0_10px_rgba(132,204,22,0.8)]">交通機関で${backSteps}駅戻る！🚌🚲🚕✨</span>`;
             playSuccess(); 
         } else {
             el.res.innerHTML = `<span class="text-orange-500 text-xl font-black tracking-widest drop-shadow-[0_0_10px_rgba(249,115,22,0.8)]">徒歩で${backSteps}駅戻る...🚶‍♂️💦</span>`;
