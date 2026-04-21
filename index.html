@@ -144,8 +144,12 @@
   <div class="control-panel">
     
     <div class="flex justify-center flex-wrap gap-x-4 gap-y-2 text-sm mb-3 pb-3 border-b border-gray-700 w-full font-bold">
+      <label class="flex items-center gap-1 cursor-pointer text-blue-300">
+        <input type="radio" name="mode" value="simple">🧊Simple
+      </label>
       <label class="flex items-center gap-1 cursor-pointer text-yellow-300">
-        <input type="radio" name="mode" value="easy">👼Easy
+        <!-- 🐣に変更 -->
+        <input type="radio" name="mode" value="easy">🐣Easy
       </label>
       <label class="flex items-center gap-1 cursor-pointer text-white">
         <input type="radio" name="mode" value="normal" checked>🚶Normal
@@ -155,7 +159,7 @@
       </label>
     </div>
 
-    <div class="flex flex-wrap justify-between items-center gap-2">
+    <div id="setup-row" class="flex flex-wrap justify-between items-center gap-2">
       <div>
         <label class="font-bold text-gray-300">発:</label>
         <select id="start-station" class="bg-gray-800 text-white p-1 rounded border border-gray-600"></select>
@@ -167,14 +171,14 @@
       <button id="reset-btn" class="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-[11px] border border-gray-500 transition-colors shadow-md text-white font-bold">リセット</button>
     </div>
     
-    <div class="flex flex-wrap justify-center gap-1.5 mt-3">
+    <div id="toggle-row" class="flex flex-wrap justify-center gap-1.5 mt-3">
         <button id="toggle-map-btn" class="bg-blue-700 hover:bg-blue-600 px-2 py-1 rounded text-[11px] border border-blue-500 transition-colors font-bold shadow-md">🗺️ 路線図: ON</button>
         <button id="toggle-reverse-btn" class="bg-blue-700 hover:bg-blue-600 px-2 py-1 rounded text-[11px] border border-blue-500 transition-colors font-bold shadow-md">🔄 リバース: ON</button>
         <button id="toggle-prevent-btn" class="bg-blue-700 hover:bg-blue-600 px-2 py-1 rounded text-[11px] border border-blue-500 transition-colors font-bold shadow-md">🛡️ 無限戻り防止: ON</button>
         <button id="toggle-split-btn" class="bg-blue-700 hover:bg-blue-600 px-2 py-1 rounded text-[11px] border border-blue-500 transition-colors font-bold shadow-md">🔪 スプリット: OFF</button>
     </div>
 
-    <div class="flex justify-around mt-3 border-t border-gray-700 pt-2">
+    <div id="status-row" class="flex justify-around mt-3 border-t border-gray-700 pt-2">
       <div class="text-center"><p class="text-[10px] text-gray-400">現在地</p><p id="curr-name" class="font-bold text-red-400 text-base">-</p></div>
       <div class="text-center"><p class="text-[10px] text-gray-400">進んだ駅数</p><p id="prog-count" class="font-bold text-green-400 text-base">0/30</p></div>
       <div class="text-center"><p class="text-[10px] text-gray-400">戻った回数</p><p id="fail-count" class="font-bold text-red-500 text-base">0回</p></div>
@@ -536,6 +540,35 @@
         }
     }
 
+    function updateModeUI() {
+        if (state.mode === 'simple') {
+            document.getElementById('setup-row').style.display = 'none';
+            document.getElementById('status-row').style.display = 'none';
+            el.circle.style.display = 'none';
+            el.res.innerHTML = '<span class="text-gray-400 h-6">ルーレットを回してね</span>';
+            
+            document.getElementById('toggle-map-btn').style.display = 'none';
+            document.getElementById('toggle-reverse-btn').style.display = 'none';
+            document.getElementById('toggle-prevent-btn').style.display = 'none';
+            document.getElementById('toggle-split-btn').style.display = 'block';
+
+            state.wheelFace = 'normal_' + (state.splitEnabled ? 'on' : 'off'); 
+        } else {
+            document.getElementById('setup-row').style.display = 'flex';
+            document.getElementById('status-row').style.display = 'flex';
+            el.circle.style.display = state.mapVisible ? 'block' : 'none';
+            el.res.innerHTML = '<span class="text-gray-400 h-6">スタート駅を選んでね</span>';
+            
+            document.getElementById('toggle-map-btn').style.display = 'block';
+            document.getElementById('toggle-reverse-btn').style.display = 'block';
+            document.getElementById('toggle-prevent-btn').style.display = 'block';
+            document.getElementById('toggle-split-btn').style.display = 'block';
+
+            state.wheelFace = state.mode + (state.splitEnabled ? '_on' : '_off');
+        }
+        updateWheelDisplay();
+    }
+
     function init() {
       stations.forEach((s, i) => { 
         const o = document.createElement('option'); 
@@ -544,7 +577,6 @@
         el.select.appendChild(o); 
       });
       
-      el.circle.style.display = state.mapVisible ? 'block' : 'none';
       updateToggleBtnUI(el.mapToggleBtn, state.mapVisible, '🗺️ 路線図');
       updateToggleBtnUI(el.reverseToggleBtn, state.reverseRouletteEnabled, '🔄 リバース');
       updateToggleBtnUI(el.preventToggleBtn, state.preventConsecutiveReturn, '🛡️ 無限戻り防止');
@@ -553,6 +585,7 @@
       render();
       
       el.select.onchange = e => { 
+        if(state.spinning) { e.target.value = state.start; return; }
         if((state.prog > 0 || state.failCount > 0) && !confirm("リセットしますか？")) {
             e.target.value = state.start; return;
         }
@@ -563,6 +596,7 @@
 
       document.querySelectorAll('input[name="dir"]').forEach(r => {
         r.onchange = e => { 
+          if(state.spinning) { document.querySelector(`input[name="dir"][value="${state.dir}"]`).checked = true; return; }
           if((state.prog > 0 || state.failCount > 0) && !confirm("リセットしますか？")) {
             document.querySelector(`input[name="dir"][value="${state.dir}"]`).checked = true; return;
           }
@@ -574,48 +608,60 @@
 
       document.querySelectorAll('input[name="mode"]').forEach(r => {
         r.onchange = e => {
-          if((state.prog > 0 || state.failCount > 0) && !confirm("難易度を変更すると進行状況がリセットされます。よろしいですか？")) {
+          if(state.spinning) { document.querySelector(`input[name="mode"][value="${state.mode}"]`).checked = true; return; }
+          if(state.mode !== 'simple' && (state.prog > 0 || state.failCount > 0) && !confirm("難易度を変更すると進行状況がリセットされます。よろしいですか？")) {
             document.querySelector(`input[name="mode"][value="${state.mode}"]`).checked = true; return;
           }
           state.mode = e.target.value;
-          state.wheelFace = state.mode + (state.splitEnabled ? '_on' : '_off');
           state.start = state.curr = parseInt(el.select.value);
           state.prog = 0; state.failCount = 0; state.successCount = 0; state.lastResultWasReturn = false;
-          updateWheelDisplay();
           render();
+          updateModeUI();
         }
       });
 
       el.mapToggleBtn.onclick = () => {
+        if(state.spinning) return;
         state.mapVisible = !state.mapVisible;
         el.circle.style.display = state.mapVisible ? 'block' : 'none';
         updateToggleBtnUI(el.mapToggleBtn, state.mapVisible, '🗺️ 路線図');
       };
 
       el.reverseToggleBtn.onclick = () => {
+        if(state.spinning) return;
         state.reverseRouletteEnabled = !state.reverseRouletteEnabled;
         updateToggleBtnUI(el.reverseToggleBtn, state.reverseRouletteEnabled, '🔄 リバース');
       };
 
       el.preventToggleBtn.onclick = () => {
+        if(state.spinning) return;
         state.preventConsecutiveReturn = !state.preventConsecutiveReturn;
         updateToggleBtnUI(el.preventToggleBtn, state.preventConsecutiveReturn, '🛡️ 無限戻り防止');
       };
 
       el.splitToggleBtn.onclick = () => {
+        if(state.spinning) return;
         state.splitEnabled = !state.splitEnabled;
         updateToggleBtnUI(el.splitToggleBtn, state.splitEnabled, '🔪 スプリット');
         if(!state.wheelFace.startsWith('return_method')) {
-            state.wheelFace = state.mode + (state.splitEnabled ? '_on' : '_off');
+            if (state.mode === 'simple') {
+                 state.wheelFace = 'normal_' + (state.splitEnabled ? 'on' : 'off');
+            } else {
+                 state.wheelFace = state.mode + (state.splitEnabled ? '_on' : '_off');
+            }
             updateWheelDisplay();
         }
       };
 
       el.btn.onclick = spin;
       el.name.textContent = stations[state.curr].ja;
-      document.getElementById('reset-btn').onclick = () => location.reload();
       
-      updateWheelDisplay();
+      document.getElementById('reset-btn').onclick = () => {
+          if(state.spinning) return;
+          location.reload();
+      };
+      
+      updateModeUI();
     }
 
     function render() {
@@ -716,7 +762,7 @@
       if(state.spinning) return; 
       
       if(state.wheelFace.startsWith('return_method')) {
-          state.wheelFace = state.mode + (state.splitEnabled ? '_on' : '_off');
+          state.wheelFace = state.mode === 'simple' ? 'normal_' + (state.splitEnabled ? 'on' : 'off') : state.mode + (state.splitEnabled ? '_on' : '_off');
           updateWheelDisplay();
       }
 
@@ -729,15 +775,18 @@
       let moveRot = 0;
       let validAngle = false;
 
+      let effMode = state.mode === 'simple' ? 'normal' : state.mode;
+      let effSplit = state.splitEnabled;
+
       while(!validAngle) {
           moveRot = (Math.floor(Math.random() * 4 + 4) * 360) + Math.floor(Math.random() * 360);
           let tempRot = state.rot + moveRot;
           let deg = (360 - (tempRot % 360)) % 360;
           let offsetDeg = (deg - 260 + 360) % 360;
           
-          let resType = getResultTypeForAngle(offsetDeg, state.mode, state.splitEnabled);
+          let resType = getResultTypeForAngle(offsetDeg, effMode, effSplit);
 
-          if (state.preventConsecutiveReturn && state.lastResultWasReturn) {
+          if (state.mode !== 'simple' && state.preventConsecutiveReturn && state.lastResultWasReturn) {
               if (resType !== 'fail' && resType !== 'double_fail') {
                   validAngle = true; 
               }
@@ -791,7 +840,24 @@
     function finishSpin() {
       const deg = (360 - (state.rot % 360)) % 360;
       const offsetDeg = (deg - 260 + 360) % 360;
-      let resultType = getResultTypeForAngle(offsetDeg, state.mode, state.splitEnabled);
+      
+      let effMode = state.mode === 'simple' ? 'normal' : state.mode;
+      let effSplit = state.splitEnabled;
+      let resultType = getResultTypeForAngle(offsetDeg, effMode, effSplit);
+
+      if (state.mode === 'simple') {
+          if (resultType === 'fail') {
+              el.res.innerHTML = '<span class="text-red-500 text-xl font-black tracking-widest drop-shadow-[0_0_10px_rgba(255,0,0,0.8)]">戻る...🥶</span>';
+              playDespair();
+              el.body.classList.add('flash-active');
+              setTimeout(() => el.body.classList.remove('flash-active'), 1500);
+          } else {
+              el.res.innerHTML = '<span class="text-green-400 text-xl font-bold tracking-widest drop-shadow-md">進む！🏃‍♂️</span>';
+              playSuccess();
+          }
+          state.spinning = false; el.btn.disabled = false; el.btn.style.opacity = '1';
+          return; 
+      }
 
       if (resultType === 'nagano') {
         state.lastResultWasReturn = false; 
