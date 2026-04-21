@@ -143,7 +143,7 @@
   
   <div class="control-panel">
     
-    <div class="flex justify-center gap-4 text-sm mb-3 pb-3 border-b border-gray-700 w-full font-bold">
+    <div class="flex justify-center flex-wrap gap-x-4 gap-y-2 text-sm mb-3 pb-3 border-b border-gray-700 w-full font-bold">
       <label class="flex items-center gap-1 cursor-pointer text-yellow-300">
         <input type="radio" name="mode" value="easy">👼Easy
       </label>
@@ -171,6 +171,7 @@
         <button id="toggle-map-btn" class="bg-blue-700 hover:bg-blue-600 px-2 py-1 rounded text-[11px] border border-blue-500 transition-colors font-bold shadow-md">🗺️ 路線図: ON</button>
         <button id="toggle-reverse-btn" class="bg-blue-700 hover:bg-blue-600 px-2 py-1 rounded text-[11px] border border-blue-500 transition-colors font-bold shadow-md">🔄 リバース: ON</button>
         <button id="toggle-prevent-btn" class="bg-blue-700 hover:bg-blue-600 px-2 py-1 rounded text-[11px] border border-blue-500 transition-colors font-bold shadow-md">🛡️ 無限戻り防止: ON</button>
+        <button id="toggle-split-btn" class="bg-blue-700 hover:bg-blue-600 px-2 py-1 rounded text-[11px] border border-blue-500 transition-colors font-bold shadow-md">🔪 スプリット: OFF</button>
     </div>
 
     <div class="flex justify-around mt-3 border-t border-gray-700 pt-2">
@@ -368,9 +369,10 @@
     
     let state = { 
         start:0, curr:0, prog:0, failCount:0, successCount:0, rot:0, spinning:false, 
-        dir:'outer', mode:'normal', mapVisible:false, wheelFace:'normal',
+        dir:'outer', mode:'normal', mapVisible:false, wheelFace:'normal_off',
         reverseRouletteEnabled: false,
         preventConsecutiveReturn: true,
+        splitEnabled: false, 
         lastResultWasReturn: false
     };
     
@@ -394,68 +396,98 @@
       clearMsg: document.getElementById('clear-msg'),
       mapToggleBtn: document.getElementById('toggle-map-btn'),
       reverseToggleBtn: document.getElementById('toggle-reverse-btn'),
-      preventToggleBtn: document.getElementById('toggle-prevent-btn')
+      preventToggleBtn: document.getElementById('toggle-prevent-btn'),
+      splitToggleBtn: document.getElementById('toggle-split-btn') 
     };
 
-    // ★ Easyモードの交通を80%から70%に減らし（徒歩30%に）、綺麗に階段になるように調整 ★
     const wheelConfigs = {
-        easy: {
+        easy_off: {
             gradient: 'conic-gradient(from 260deg, #d97706 0% 1.25%, #7f1d1d 1.25% 18.75%, #d97706 18.75% 20%, #14532d 20% 100%)',
             html: `
                 <div class="slots-overlay"></div>
-                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(262.2deg) translateY(-140px);">
-                  <span class="text-[12px] text-yellow-300 text-center leading-none">長<br>野</span>
-                </div>
-                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(296deg) translateY(-110px);">
-                  <span class="text-3xl text-red-200">戻る</span><span class="text-sm text-gray-300">17.5%</span>
-                </div>
-                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(329.8deg) translateY(-140px);">
-                  <span class="text-[12px] text-yellow-300 text-center leading-none">長<br>野</span>
-                </div>
-                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight tracking-widest z-10" style="transform: translate(-50%, -50%) rotate(116deg) translateY(-85px);">
-                  <span class="text-6xl">進む</span><span class="text-yellow-300 text-4xl mt-1">80%</span>
-                </div>
+                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(262.25deg) translateY(-140px);"><span class="text-[12px] text-yellow-300 text-center leading-none">長<br>野</span></div>
+                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(296deg) translateY(-110px);"><span class="text-3xl text-red-200">戻る</span><span class="text-sm text-gray-300">17.5%</span></div>
+                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(329.75deg) translateY(-140px);"><span class="text-[12px] text-yellow-300 text-center leading-none">長<br>野</span></div>
+                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight tracking-widest z-10" style="transform: translate(-50%, -50%) rotate(116deg) translateY(-85px);"><span class="text-6xl">進む</span><span class="text-yellow-300 text-4xl mt-1">80%</span></div>
             `
         },
-        normal: {
+        normal_off: {
             gradient: 'conic-gradient(from 260deg, #7f1d1d 0% 20%, #14532d 20% 100%)',
             html: `
                 <div class="slots-overlay"></div>
-                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(296deg) translateY(-110px);">
-                  <span class="text-3xl text-red-200">戻る</span><span class="text-sm text-gray-300">20%</span>
-                </div>
-                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight tracking-widest z-10" style="transform: translate(-50%, -50%) rotate(116deg) translateY(-85px);">
-                  <span class="text-6xl">進む</span><span class="text-yellow-300 text-4xl mt-1">80%</span>
-                </div>
+                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(296deg) translateY(-110px);"><span class="text-3xl text-red-200">戻る</span><span class="text-sm text-gray-300">20%</span></div>
+                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight tracking-widest z-10" style="transform: translate(-50%, -50%) rotate(116deg) translateY(-85px);"><span class="text-6xl">進む</span><span class="text-yellow-300 text-4xl mt-1">80%</span></div>
             `
         },
-        hell: {
-            gradient: 'conic-gradient(from 260deg, #4c1d95 0% 2%, #d97706 2% 3%, #7f1d1d 3% 25%, #14532d 25% 100%)',
+        hell_off: {
+            gradient: 'conic-gradient(from 260deg, #4c1d95 0% 3%, #d97706 3% 4%, #7f1d1d 4% 28%, #14532d 28% 100%)',
             html: `
                 <div class="slots-overlay"></div>
-                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(263.6deg) translateY(-150px);">
-                  <span class="text-[12px] text-white text-center leading-none">2駅<br>戻<br>る</span>
-                </div>
-                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(269deg) translateY(-120px);">
-                  <span class="text-[10px] text-yellow-300 text-center leading-none">長<br>野</span>
-                </div>
-                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(310deg) translateY(-115px);">
-                  <span class="text-3xl text-red-200">1駅戻る</span><span class="text-xs text-gray-300">22%</span>
-                </div>
-                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight tracking-widest z-10" style="transform: translate(-50%, -50%) rotate(125deg) translateY(-85px);">
-                  <span class="text-6xl text-gray-300">進む</span><span class="text-yellow-400 text-5xl mt-1">75%</span>
-                </div>
+                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(265.4deg) translateY(-150px);"><span class="text-[12px] text-white text-center leading-none">2駅<br>戻<br>る</span></div>
+                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(272.6deg) translateY(-120px);"><span class="text-[10px] text-yellow-300 text-center leading-none">長<br>野</span></div>
+                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(317.6deg) translateY(-115px);"><span class="text-3xl text-red-200">1駅戻る</span><span class="text-xs text-gray-300">24%</span></div>
+                <div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight tracking-widest z-10" style="transform: translate(-50%, -50%) rotate(130.4deg) translateY(-85px);"><span class="text-6xl text-gray-300">進む</span><span class="text-yellow-400 text-5xl mt-1">72%</span></div>
             `
         },
-        return_method_hell: {
-            gradient: 'repeating-conic-gradient(from 260deg, #c2410c 0% 5%, #4d7c0f 5% 10%)',
+
+        easy_on: {
+            gradient: 'conic-gradient(from 260deg, #d97706 0% 1.25%, #7f1d1d 1.25% 4.75%, #14532d 4.75% 20.75%, #7f1d1d 20.75% 24.25%, #14532d 24.25% 40.25%, #d97706 40.25% 41.5%, #7f1d1d 41.5% 45%, #14532d 45% 61%, #7f1d1d 61% 64.5%, #14532d 64.5% 80.5%, #7f1d1d 80.5% 84%, #14532d 84% 100%)',
             html: (() => {
                 let h = '<div class="slots-overlay"></div>';
-                for(let i=0; i<10; i++) {
-                    let dWalk = 260 + 9 + (i * 36);
-                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dWalk}deg) translateY(-135px);"><span class="text-[13px] leading-none text-center">徒<br>歩</span></div>`;
-                    let dTrain = 260 + 27 + (i * 36);
-                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dTrain}deg) translateY(-135px);"><span class="text-[13px] leading-none text-center">交<br>通</span></div>`;
+                h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(262.25deg) translateY(-140px);"><span class="text-[12px] text-yellow-300 text-center leading-none">長<br>野</span></div>`;
+                h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(47.15deg) translateY(-140px);"><span class="text-[12px] text-yellow-300 text-center leading-none">長<br>野</span></div>`;
+                const fail_d = [270.8, 341, 55.7, 125.9, 196.1];
+                fail_d.forEach(d => {
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${d}deg) translateY(-140px);"><span class="text-[12px] leading-none text-center">戻<br>る</span></div>`;
+                });
+                const succ_d = [305.9, 16.1, 90.8, 161, 231.2];
+                succ_d.forEach(d => {
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight tracking-widest z-10" style="transform: translate(-50%, -50%) rotate(${d}deg) translateY(-110px);"><span class="text-4xl">進む</span></div>`;
+                });
+                return h;
+            })()
+        },
+        normal_on: {
+            gradient: 'repeating-conic-gradient(from 260deg, #7f1d1d 0% 4%, #14532d 4% 20%)',
+            html: (() => {
+                let h = '<div class="slots-overlay"></div>';
+                for(let i=0; i<5; i++) {
+                    let dFail = 260 + 7.2 + (i * 72);
+                    let dSucc = 260 + 43.2 + (i * 72);
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dFail}deg) translateY(-140px);"><span class="text-[12px] leading-none text-center">戻<br>る</span></div>`;
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight tracking-widest z-10" style="transform: translate(-50%, -50%) rotate(${dSucc}deg) translateY(-110px);"><span class="text-4xl">進む</span></div>`;
+                }
+                return h;
+            })()
+        },
+        hell_on: {
+            gradient: 'conic-gradient(from 260deg, #4c1d95 0% 3%, #d97706 3% 4%, #7f1d1d 4% 8.8%, #14532d 8.8% 23.2%, #7f1d1d 23.2% 28%, #14532d 28% 42.4%, #7f1d1d 42.4% 47.2%, #14532d 47.2% 61.6%, #7f1d1d 61.6% 66.4%, #14532d 66.4% 80.8%, #7f1d1d 80.8% 85.6%, #14532d 85.6% 100%)',
+            html: (() => {
+                let h = '<div class="slots-overlay"></div>';
+                h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(265.4deg) translateY(-140px);"><span class="text-[10px] text-purple-300 text-center leading-none">2駅<br>戻<br>る</span></div>`;
+                h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(272.6deg) translateY(-120px);"><span class="text-[10px] text-yellow-300 text-center leading-none">長<br>野</span></div>`;
+                
+                const fail_d = [283.04, 352.16, 61.28, 130.4, 199.52];
+                fail_d.forEach(d => {
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${d}deg) translateY(-140px);"><span class="text-[12px] leading-none text-center">戻<br>る</span></div>`;
+                });
+                const succ_d = [317.6, 26.72, 95.84, 164.96, 234.08];
+                succ_d.forEach(d => {
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight tracking-widest z-10" style="transform: translate(-50%, -50%) rotate(${d}deg) translateY(-110px);"><span class="text-4xl">進む</span></div>`;
+                });
+                return h;
+            })()
+        },
+
+        return_method_easy: {
+            gradient: 'repeating-conic-gradient(from 260deg, #c2410c 0% 3.75%, #4d7c0f 3.75% 12.5%)',
+            html: (() => {
+                let h = '<div class="slots-overlay"></div>';
+                for(let i=0; i<8; i++) {
+                    let dWalk = 260 + 6.75 + (i * 45); 
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dWalk}deg) translateY(-135px);"><span class="text-[14px] leading-none text-center">徒<br>歩</span></div>`;
+                    let dTrain = 260 + 29.25 + (i * 45); 
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dTrain}deg) translateY(-135px);"><span class="text-[14px] leading-none text-center">交<br>通</span></div>`;
                 }
                 return h;
             })()
@@ -466,23 +498,22 @@
                 let h = '<div class="slots-overlay"></div>';
                 for(let i=0; i<10; i++) {
                     let dWalk = 260 + 7.2 + (i * 36);
-                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dWalk}deg) translateY(-135px);"><span class="text-[11px] leading-none text-center">徒<br>歩</span></div>`;
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dWalk}deg) translateY(-135px);"><span class="text-[14px] leading-none text-center">徒<br>歩</span></div>`;
                     let dTrain = 260 + 25.2 + (i * 36);
-                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dTrain}deg) translateY(-135px);"><span class="text-[15px] leading-none text-center">交<br>通</span></div>`;
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dTrain}deg) translateY(-135px);"><span class="text-[14px] leading-none text-center">交<br>通</span></div>`;
                 }
                 return h;
             })()
         },
-        // ★ Easy: 徒歩30% / 交通70% に調整 (1セット45度中、13.5度が徒歩) ★
-        return_method_easy: {
-            gradient: 'repeating-conic-gradient(from 260deg, #c2410c 0% 3.75%, #4d7c0f 3.75% 12.5%)',
+        return_method_hell: {
+            gradient: 'repeating-conic-gradient(from 260deg, #c2410c 0% 5%, #4d7c0f 5% 10%)',
             html: (() => {
                 let h = '<div class="slots-overlay"></div>';
-                for(let i=0; i<8; i++) {
-                    let dWalk = 260 + 6.75 + (i * 45); // 13.5の半分
-                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dWalk}deg) translateY(-135px);"><span class="text-[9px] leading-none text-center">徒<br>歩</span></div>`;
-                    let dTrain = 260 + 29.25 + (i * 45); // 13.5 + 31.5の半分
-                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dTrain}deg) translateY(-135px);"><span class="text-[16px] leading-none text-center">交<br>通</span></div>`;
+                for(let i=0; i<10; i++) {
+                    let dWalk = 260 + 9 + (i * 36);
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dWalk}deg) translateY(-135px);"><span class="text-[14px] leading-none text-center">徒<br>歩</span></div>`;
+                    let dTrain = 260 + 27 + (i * 36);
+                    h += `<div class="absolute top-1/2 left-1/2 flex flex-col items-center justify-center font-black text-white text-outline leading-tight z-10" style="transform: translate(-50%, -50%) rotate(${dTrain}deg) translateY(-135px);"><span class="text-[14px] leading-none text-center">交<br>通</span></div>`;
                 }
                 return h;
             })()
@@ -517,6 +548,7 @@
       updateToggleBtnUI(el.mapToggleBtn, state.mapVisible, '🗺️ 路線図');
       updateToggleBtnUI(el.reverseToggleBtn, state.reverseRouletteEnabled, '🔄 リバース');
       updateToggleBtnUI(el.preventToggleBtn, state.preventConsecutiveReturn, '🛡️ 無限戻り防止');
+      updateToggleBtnUI(el.splitToggleBtn, state.splitEnabled, '🔪 スプリット');
       
       render();
       
@@ -546,7 +578,7 @@
             document.querySelector(`input[name="mode"][value="${state.mode}"]`).checked = true; return;
           }
           state.mode = e.target.value;
-          state.wheelFace = state.mode;
+          state.wheelFace = state.mode + (state.splitEnabled ? '_on' : '_off');
           state.start = state.curr = parseInt(el.select.value);
           state.prog = 0; state.failCount = 0; state.successCount = 0; state.lastResultWasReturn = false;
           updateWheelDisplay();
@@ -568,6 +600,15 @@
       el.preventToggleBtn.onclick = () => {
         state.preventConsecutiveReturn = !state.preventConsecutiveReturn;
         updateToggleBtnUI(el.preventToggleBtn, state.preventConsecutiveReturn, '🛡️ 無限戻り防止');
+      };
+
+      el.splitToggleBtn.onclick = () => {
+        state.splitEnabled = !state.splitEnabled;
+        updateToggleBtnUI(el.splitToggleBtn, state.splitEnabled, '🔪 スプリット');
+        if(!state.wheelFace.startsWith('return_method')) {
+            state.wheelFace = state.mode + (state.splitEnabled ? '_on' : '_off');
+            updateWheelDisplay();
+        }
       };
 
       el.btn.onclick = spin;
@@ -625,20 +666,49 @@
       el.failCount.textContent = `${state.failCount}回`; 
     }
 
-    function getResultTypeForAngle(offsetDeg, mode) {
-      if (mode === 'easy') {
-          if (offsetDeg < 4.5) return 'nagano';        // 1.25%
-          if (offsetDeg < 67.5) return 'fail';         // 17.5% (4.5 + 63)
-          if (offsetDeg < 72) return 'nagano';         // 1.25% (67.5 + 4.5)
-          return 'success';                            // 80% (72 ~ 360)
-      } else if (mode === 'normal') {
-          if (offsetDeg < 72) return 'fail';         
-          return 'success';                     
-      } else if (mode === 'hell') {
-          if (offsetDeg < 7.2) return 'double_fail';      
-          if (offsetDeg < 10.8) return 'nagano';          
-          if (offsetDeg < 90) return 'fail';              
-          return 'success';                               
+    function getResultTypeForAngle(offsetDeg, mode, splitEnabled) {
+      let p = offsetDeg / 360 * 100;
+
+      if (!splitEnabled) {
+          if (mode === 'easy') {
+              if (p < 1.25) return 'nagano';        
+              if (p < 18.75) return 'fail';         
+              if (p < 20) return 'nagano';         
+              return 'success';                            
+          } else if (mode === 'normal') {
+              if (p < 20) return 'fail';         
+              return 'success';                     
+          } else if (mode === 'hell') {
+              if (p < 3) return 'double_fail';      
+              if (p < 4) return 'nagano';          
+              if (p < 28) return 'fail';              
+              return 'success';                               
+          }
+      } else {
+          if (mode === 'easy') {
+              if (p < 1.25) return 'nagano';
+              if (p < 4.75) return 'fail';
+              if (p < 20.75) return 'success';
+              if (p < 24.25) return 'fail';
+              if (p < 40.25) return 'success';
+              if (p < 41.5) return 'nagano';
+              if (p < 45) return 'fail';
+              if (p < 61) return 'success';
+              if (p < 64.5) return 'fail';
+              if (p < 80.5) return 'success';
+              if (p < 84) return 'fail';
+              return 'success';
+          } else if (mode === 'normal') {
+              let mod = p % 20; 
+              if (mod < 4) return 'fail'; 
+              return 'success';
+          } else if (mode === 'hell') {
+              if (p < 3) return 'double_fail';
+              if (p < 4) return 'nagano';
+              let mod = (p - 4) % 19.2; 
+              if (mod < 4.8) return 'fail';
+              return 'success';
+          }
       }
     }
 
@@ -646,7 +716,7 @@
       if(state.spinning) return; 
       
       if(state.wheelFace.startsWith('return_method')) {
-          state.wheelFace = state.mode;
+          state.wheelFace = state.mode + (state.splitEnabled ? '_on' : '_off');
           updateWheelDisplay();
       }
 
@@ -665,7 +735,7 @@
           let deg = (360 - (tempRot % 360)) % 360;
           let offsetDeg = (deg - 260 + 360) % 360;
           
-          let resType = getResultTypeForAngle(offsetDeg, state.mode);
+          let resType = getResultTypeForAngle(offsetDeg, state.mode, state.splitEnabled);
 
           if (state.preventConsecutiveReturn && state.lastResultWasReturn) {
               if (resType !== 'fail' && resType !== 'double_fail') {
@@ -721,7 +791,7 @@
     function finishSpin() {
       const deg = (360 - (state.rot % 360)) % 360;
       const offsetDeg = (deg - 260 + 360) % 360;
-      let resultType = getResultTypeForAngle(offsetDeg, state.mode);
+      let resultType = getResultTypeForAngle(offsetDeg, state.mode, state.splitEnabled);
 
       if (resultType === 'nagano') {
         state.lastResultWasReturn = false; 
@@ -731,7 +801,6 @@
         state.successCount++;
         el.clearMsg.textContent = "奇跡の長野ワープ大成功！！おめでとうシュリンプ🍤！";
         
-        state.spinning = false; el.btn.disabled = false; el.btn.style.opacity = '1';
       } 
       else if (resultType === 'fail' || resultType === 'double_fail') {
         state.lastResultWasReturn = true; 
@@ -782,12 +851,16 @@
         state.successCount++; 
         state.curr = (state.curr + (state.dir === 'outer' ? 1 : -1) + 30) % 30;
         
-        state.spinning = false; el.btn.disabled = false; el.btn.style.opacity = '1';
+        if (state.prog < 30) {
+            state.spinning = false; el.btn.disabled = false; el.btn.style.opacity = '1';
+        }
       }
       
       render();
       
       if(state.prog >= 30) { 
+        el.btn.disabled = true;
+        el.btn.style.opacity = '0.7';
         setTimeout(() => {
             el.resSuccess.textContent = `${state.successCount}回`;
             el.resFail.textContent = `${state.failCount}回`;
@@ -798,7 +871,7 @@
                 playClear();
                 el.clearMsg.textContent = "山手線一周達成！お疲れ様シュリンプ🍤！";
             }
-        }, 1500); 
+        }, 3000); 
       }
     }
 
@@ -837,7 +910,6 @@
         
         let method = '';
         
-        // ★ Easyの判定を 徒歩30% (13.5度) / 交通70% に修正 ★
         if (state.mode === 'easy') {
             let mod = offsetDeg % 45;
             method = (mod < 13.5) ? 'walk' : 'train';
