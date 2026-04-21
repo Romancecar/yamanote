@@ -211,6 +211,17 @@
     <div id="res-display" class="mt-3 text-base font-bold text-gray-400 h-6">スタート駅を選んでね</div>
   </div>
 
+  <!-- ★ カスタム確認ダイアログ (ブラウザ制限を回避する専用UI) ★ -->
+  <div id="custom-confirm" class="fixed inset-0 bg-black bg-opacity-80 z-[60] flex flex-col items-center justify-center hidden">
+    <div class="bg-gray-800 border-2 border-red-500 rounded-xl p-6 w-80 text-center shadow-[0_0_20px_rgba(239,68,68,0.4)]">
+      <h2 class="text-white font-bold text-lg mb-4 leading-relaxed" id="confirm-msg">進行状況をリセットしますか？</h2>
+      <div class="flex justify-around mt-6">
+        <button id="confirm-no" class="bg-gray-600 hover:bg-gray-500 px-6 py-2 rounded-full font-bold text-white transition-colors text-sm">キャンセル</button>
+        <button id="confirm-yes" class="bg-red-600 hover:bg-red-500 px-6 py-2 rounded-full font-bold text-white transition-colors shadow-[0_0_10px_rgba(239,68,68,0.6)] text-sm">リセット</button>
+      </div>
+    </div>
+  </div>
+
   <div id="clear-overlay" class="fixed inset-0 bg-black bg-opacity-95 z-50 flex flex-col items-center justify-center hidden">
     <h1 class="text-5xl font-black text-yellow-400 mb-2 animate-bounce text-outline">CLEAR!!</h1>
     <p class="text-white font-bold mb-6 text-lg" id="clear-msg">山手線一周達成！お疲れ様シュリンプ🍤！</p>
@@ -235,21 +246,40 @@
   </div>
 
   <script>
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioCtx = null;
+    function getAudioCtx() {
+        if (!audioCtx) {
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {}
+        }
+        return audioCtx;
+    }
     
     function playTone(f, t, d, type='sine', v=0.5) {
-      if(audioCtx.state === 'suspended') audioCtx.resume();
-      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-      o.type = type; o.frequency.setValueAtTime(f, t);
-      g.gain.setValueAtTime(0, t); 
-      g.gain.linearRampToValueAtTime(v, t + Math.min(0.05, d/2)); 
-      g.gain.exponentialRampToValueAtTime(0.01, t + d);
-      o.connect(g); g.connect(audioCtx.destination); 
-      o.start(t); o.stop(t + d);
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      if (ctx.state === 'suspended') ctx.resume();
+      try {
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.type = type; 
+          o.frequency.setValueAtTime(f, t);
+          g.gain.setValueAtTime(0, t); 
+          g.gain.linearRampToValueAtTime(v, t + Math.min(0.05, d/2)); 
+          g.gain.exponentialRampToValueAtTime(0.01, t + d);
+          o.connect(g); 
+          g.connect(ctx.destination); 
+          o.start(t); 
+          o.stop(t + d);
+      } catch (e) {}
     }
 
     function playSuccess() {
-      const n = audioCtx.currentTime;
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      if(ctx.state === 'suspended') ctx.resume();
+      const n = ctx.currentTime;
       playTone(783.99, n, 0.15, 'square', 0.4); 
       playTone(1046.50, n+0.15, 0.15, 'square', 0.4); 
       playTone(1318.51, n+0.3, 0.15, 'square', 0.4);
@@ -258,80 +288,82 @@
     }
 
     function playDespair() {
-      const n = audioCtx.currentTime;
-      const osc1 = audioCtx.createOscillator();
-      const osc2 = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-      
-      osc1.type = 'sawtooth';
-      osc2.type = 'square';
-      
-      osc1.frequency.setValueAtTime(200, n);
-      osc1.frequency.exponentialRampToValueAtTime(20, n + 2.0);
-      
-      osc2.frequency.setValueAtTime(205, n);
-      osc2.frequency.exponentialRampToValueAtTime(22, n + 2.0);
-      
-      gainNode.gain.setValueAtTime(0, n);
-      gainNode.gain.linearRampToValueAtTime(0.8, n + 0.1);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, n + 2.5);
-      
-      osc1.connect(gainNode);
-      osc2.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-      
-      osc1.start(n);
-      osc2.start(n);
-      osc1.stop(n + 2.5);
-      osc2.stop(n + 2.5);
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      if(ctx.state === 'suspended') ctx.resume();
+      const n = ctx.currentTime;
+      try {
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          const gainNode = ctx.createGain();
+          osc1.type = 'sawtooth';
+          osc2.type = 'square';
+          osc1.frequency.setValueAtTime(200, n);
+          osc1.frequency.exponentialRampToValueAtTime(20, n + 2.0);
+          osc2.frequency.setValueAtTime(205, n);
+          osc2.frequency.exponentialRampToValueAtTime(22, n + 2.0);
+          gainNode.gain.setValueAtTime(0, n);
+          gainNode.gain.linearRampToValueAtTime(0.8, n + 0.1);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, n + 2.5);
+          osc1.connect(gainNode);
+          osc2.connect(gainNode);
+          gainNode.connect(ctx.destination);
+          osc1.start(n);
+          osc2.start(n);
+          osc1.stop(n + 2.5);
+          osc2.stop(n + 2.5);
+      } catch (e) {}
 
       setTimeout(() => {
-          playTone(800, audioCtx.currentTime, 0.2, 'sawtooth', 0.3);
-          playTone(750, audioCtx.currentTime + 0.1, 0.3, 'sawtooth', 0.3);
+          if (!getAudioCtx()) return;
+          playTone(800, getAudioCtx().currentTime, 0.2, 'sawtooth', 0.3);
+          playTone(750, getAudioCtx().currentTime + 0.1, 0.3, 'sawtooth', 0.3);
       }, 100);
     }
 
     function playDoubleDespair() {
-      const n = audioCtx.currentTime;
-      const osc1 = audioCtx.createOscillator();
-      const osc2 = audioCtx.createOscillator();
-      const osc3 = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-      
-      osc1.type = 'sawtooth';
-      osc2.type = 'square';
-      osc3.type = 'triangle';
-      
-      osc1.frequency.setValueAtTime(150, n);
-      osc1.frequency.exponentialRampToValueAtTime(10, n + 3.0); 
-      
-      osc2.frequency.setValueAtTime(160, n);
-      osc2.frequency.exponentialRampToValueAtTime(12, n + 3.0);
-      
-      osc3.frequency.setValueAtTime(80, n); 
-      osc3.frequency.linearRampToValueAtTime(30, n + 3.0);
-
-      gainNode.gain.setValueAtTime(0, n);
-      gainNode.gain.linearRampToValueAtTime(0.9, n + 0.1);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, n + 3.5);
-      
-      osc1.connect(gainNode);
-      osc2.connect(gainNode);
-      osc3.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-      
-      osc1.start(n); osc2.start(n); osc3.start(n);
-      osc1.stop(n + 3.5); osc2.stop(n + 3.5); osc3.stop(n + 3.5);
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      if(ctx.state === 'suspended') ctx.resume();
+      const n = ctx.currentTime;
+      try {
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          const osc3 = ctx.createOscillator();
+          const gainNode = ctx.createGain();
+          osc1.type = 'sawtooth';
+          osc2.type = 'square';
+          osc3.type = 'triangle';
+          osc1.frequency.setValueAtTime(150, n);
+          osc1.frequency.exponentialRampToValueAtTime(10, n + 3.0); 
+          osc2.frequency.setValueAtTime(160, n);
+          osc2.frequency.exponentialRampToValueAtTime(12, n + 3.0);
+          osc3.frequency.setValueAtTime(80, n); 
+          osc3.frequency.linearRampToValueAtTime(30, n + 3.0);
+          gainNode.gain.setValueAtTime(0, n);
+          gainNode.gain.linearRampToValueAtTime(0.9, n + 0.1);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, n + 3.5);
+          osc1.connect(gainNode);
+          osc2.connect(gainNode);
+          osc3.connect(gainNode);
+          gainNode.connect(ctx.destination);
+          osc1.start(n); osc2.start(n); osc3.start(n);
+          osc1.stop(n + 3.5); osc2.stop(n + 3.5); osc3.stop(n + 3.5);
+      } catch (e) {}
 
       setTimeout(() => {
-          playTone(900, audioCtx.currentTime, 0.3, 'sawtooth', 0.4);
-          playTone(800, audioCtx.currentTime + 0.15, 0.4, 'sawtooth', 0.4);
-          playTone(700, audioCtx.currentTime + 0.3, 0.5, 'sawtooth', 0.4);
+          if (!getAudioCtx()) return;
+          playTone(900, getAudioCtx().currentTime, 0.3, 'sawtooth', 0.4);
+          playTone(800, getAudioCtx().currentTime + 0.15, 0.4, 'sawtooth', 0.4);
+          playTone(700, getAudioCtx().currentTime + 0.3, 0.5, 'sawtooth', 0.4);
       }, 100);
     }
 
     function playMiracle() {
-      const n = audioCtx.currentTime;
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      if(ctx.state === 'suspended') ctx.resume();
+      const n = ctx.currentTime;
       const notes = [
           {f:523.25, t:0}, {f:659.25, t:0.1}, {f:783.99, t:0.2}, {f:1046.50, t:0.3},
           {f:1318.51, t:0.4}, {f:1567.98, t:0.5}, {f:2093.00, t:0.6}
@@ -344,7 +376,10 @@
     }
 
     function playClear() {
-      const n = audioCtx.currentTime;
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      if(ctx.state === 'suspended') ctx.resume();
+      const n = ctx.currentTime;
       const notes = [
         {f:523.25,t:0,d:0.2}, {f:523.25,t:0.2,d:0.2}, {f:523.25,t:0.4,d:0.2},
         {f:659.25,t:0.6,d:0.6}, {f:523.25,t:1.2,d:0.2}, {f:659.25,t:1.4,d:0.2},
@@ -378,6 +413,27 @@
         splitEnabled: false, 
         lastResultWasReturn: false
     };
+
+    let spinTimer1 = null, spinTimer2 = null, spinTimer3 = null;
+
+    function clearSpin() {
+        clearTimeout(spinTimer1);
+        clearTimeout(spinTimer2);
+        clearTimeout(spinTimer3);
+        state.spinning = false;
+        el.btn.disabled = false;
+        el.btn.style.opacity = '1';
+        el.body.classList.remove('flash-active', 'double-flash-active');
+        if (state.mode === 'simple') {
+            el.res.innerHTML = '<span class="text-gray-400 h-6">ルーレットを回してね</span>';
+        } else {
+            el.res.innerHTML = '<span class="text-gray-400 h-6">スタート駅を選んでね</span>';
+        }
+        if(state.wheelFace.startsWith('return_method')) {
+            state.wheelFace = state.mode === 'simple' ? 'normal_' + (state.splitEnabled ? 'on' : 'off') : state.mode + (state.splitEnabled ? '_on' : '_off');
+            updateWheelDisplay();
+        }
+    }
     
     const el = { 
       circle: document.getElementById('circle'), 
@@ -401,6 +457,23 @@
       reverseToggleBtn: document.getElementById('toggle-reverse-btn'),
       preventToggleBtn: document.getElementById('toggle-prevent-btn'),
       splitToggleBtn: document.getElementById('toggle-split-btn') 
+    };
+
+    // ★ Vercel等のiframe制限を回避するカスタム確認ポップアップ機能 ★
+    let confirmAction = null;
+    function showConfirm(msg, onYes) {
+        document.getElementById('confirm-msg').innerText = msg;
+        document.getElementById('custom-confirm').classList.remove('hidden');
+        confirmAction = onYes;
+    }
+    document.getElementById('confirm-no').onclick = () => {
+        document.getElementById('custom-confirm').classList.add('hidden');
+        confirmAction = null;
+    };
+    document.getElementById('confirm-yes').onclick = () => {
+        document.getElementById('custom-confirm').classList.add('hidden');
+        if (confirmAction) confirmAction();
+        confirmAction = null;
     };
 
     const wheelConfigs = {
@@ -544,7 +617,7 @@
             document.getElementById('setup-row').style.display = 'none';
             document.getElementById('status-row').style.display = 'none';
             el.circle.style.display = 'none';
-            el.res.innerHTML = '<span class="text-gray-400 h-6">ルーレットを回してね</span>';
+            if(!state.spinning) el.res.innerHTML = '<span class="text-gray-400 h-6">ルーレットを回してね</span>';
             
             document.getElementById('toggle-map-btn').style.display = 'none';
             document.getElementById('toggle-reverse-btn').style.display = 'none';
@@ -556,7 +629,7 @@
             document.getElementById('setup-row').style.display = 'flex';
             document.getElementById('status-row').style.display = 'flex';
             el.circle.style.display = state.mapVisible ? 'block' : 'none';
-            el.res.innerHTML = '<span class="text-gray-400 h-6">スタート駅を選んでね</span>';
+            if(!state.spinning) el.res.innerHTML = '<span class="text-gray-400 h-6">スタート駅を選んでね</span>';
             
             document.getElementById('toggle-map-btn').style.display = 'block';
             document.getElementById('toggle-reverse-btn').style.display = 'block';
@@ -583,63 +656,97 @@
       
       render();
       
-      el.select.onchange = e => { 
-        if(state.spinning) { e.target.value = state.start; return; }
-        if((state.prog > 0 || state.failCount > 0) && !confirm("リセットしますか？")) {
-            e.target.value = state.start; return;
+      // ★ 駅選択の変更（カスタムダイアログ使用） ★
+      let prevStation = el.select.value;
+      el.select.addEventListener('click', e => { prevStation = e.target.value; });
+      el.select.addEventListener('change', e => { 
+        let newVal = e.target.value;
+        if(state.prog > 0 || state.failCount > 0 || state.spinning) {
+            e.target.value = prevStation; // 見た目を一旦戻す
+            showConfirm("駅を変更すると進行状況（または回転）がリセットされます。よろしいですか？", () => {
+                e.target.value = newVal;
+                prevStation = newVal;
+                if(state.spinning) clearSpin();
+                state.start = state.curr = parseInt(newVal); 
+                state.prog = 0; state.failCount = 0; state.successCount = 0; state.lastResultWasReturn = false;
+                render(); 
+            });
+        } else {
+            prevStation = newVal;
+            state.start = state.curr = parseInt(newVal); 
+            render(); 
         }
-        state.start = state.curr = parseInt(e.target.value); 
-        state.prog = 0; state.failCount = 0; state.successCount = 0; state.lastResultWasReturn = false;
-        render(); 
-      };
+      });
 
+      // ★ 進行方向の変更（カスタムダイアログ使用） ★
       document.querySelectorAll('input[name="dir"]').forEach(r => {
-        r.onchange = e => { 
-          if(state.spinning) { document.querySelector(`input[name="dir"][value="${state.dir}"]`).checked = true; return; }
-          if((state.prog > 0 || state.failCount > 0) && !confirm("リセットしますか？")) {
-            document.querySelector(`input[name="dir"][value="${state.dir}"]`).checked = true; return;
+        r.addEventListener('click', e => { 
+          if (state.dir === e.target.value) return; 
+          let newVal = e.target.value;
+          if(state.prog > 0 || state.failCount > 0 || state.spinning) {
+            e.preventDefault(); // 見た目の変更を止める
+            showConfirm("方向を変更すると進行状況（または回転）がリセットされます。よろしいですか？", () => {
+                document.querySelector(`input[name="dir"][value="${newVal}"]`).checked = true;
+                if(state.spinning) clearSpin();
+                state.dir = newVal; 
+                state.prog = 0; state.failCount = 0; state.successCount = 0; state.lastResultWasReturn = false;
+                render(); 
+            });
+          } else {
+            state.dir = newVal;
+            render();
           }
-          state.dir = e.target.value; 
-          state.prog = 0; state.failCount = 0; state.successCount = 0; state.lastResultWasReturn = false;
-          render(); 
-        }
+        });
       });
 
+      // ★ モード変更（カスタムダイアログ使用。これでスマホでも絶対動きます） ★
       document.querySelectorAll('input[name="mode"]').forEach(r => {
-        r.onchange = e => {
-          if(state.spinning) { document.querySelector(`input[name="mode"][value="${state.mode}"]`).checked = true; return; }
-          if(state.mode !== 'simple' && (state.prog > 0 || state.failCount > 0) && !confirm("難易度を変更すると進行状況がリセットされます。よろしいですか？")) {
-            document.querySelector(`input[name="mode"][value="${state.mode}"]`).checked = true; return;
+        r.addEventListener('click', e => {
+          if (state.mode === e.target.value) return;
+          let newVal = e.target.value;
+          if(state.prog > 0 || state.failCount > 0 || state.spinning) {
+            e.preventDefault(); // 見た目の変更を止める
+            showConfirm("モードを変更すると進行状況（または回転）がリセットされます。よろしいですか？", () => {
+                document.querySelector(`input[name="mode"][value="${newVal}"]`).checked = true;
+                if(state.spinning) clearSpin();
+                state.mode = newVal;
+                state.start = state.curr = parseInt(el.select.value);
+                state.prog = 0; state.failCount = 0; state.successCount = 0; state.lastResultWasReturn = false;
+                render();
+                updateModeUI();
+            });
+          } else {
+            if(state.spinning) clearSpin(); // 念のため
+            state.mode = newVal;
+            state.start = state.curr = parseInt(el.select.value);
+            state.prog = 0; state.failCount = 0; state.successCount = 0; state.lastResultWasReturn = false;
+            render();
+            updateModeUI();
           }
-          state.mode = e.target.value;
-          state.start = state.curr = parseInt(el.select.value);
-          state.prog = 0; state.failCount = 0; state.successCount = 0; state.lastResultWasReturn = false;
-          render();
-          updateModeUI();
-        }
+        });
       });
 
+      // 各種トグルは回転中でも操作可能
       el.mapToggleBtn.onclick = () => {
-        if(state.spinning) return;
         state.mapVisible = !state.mapVisible;
         el.circle.style.display = state.mapVisible ? 'block' : 'none';
         updateToggleBtnUI(el.mapToggleBtn, state.mapVisible, '🗺️ 路線図');
       };
 
       el.reverseToggleBtn.onclick = () => {
-        if(state.spinning) return;
         state.reverseRouletteEnabled = !state.reverseRouletteEnabled;
         updateToggleBtnUI(el.reverseToggleBtn, state.reverseRouletteEnabled, '🔄 リバース');
       };
 
       el.preventToggleBtn.onclick = () => {
-        if(state.spinning) return;
         state.preventConsecutiveReturn = !state.preventConsecutiveReturn;
         updateToggleBtnUI(el.preventToggleBtn, state.preventConsecutiveReturn, '🛡️ 無限戻り防止');
       };
 
+      // ★ スプリットボタンだけは、ルーレット回転中の切り替えをブロック ★
       el.splitToggleBtn.onclick = () => {
-        if(state.spinning) return;
+        if(state.spinning) return; 
+        
         state.splitEnabled = !state.splitEnabled;
         updateToggleBtnUI(el.splitToggleBtn, state.splitEnabled, '🔪 スプリット');
         if(!state.wheelFace.startsWith('return_method')) {
@@ -655,9 +762,16 @@
       el.btn.onclick = spin;
       el.name.textContent = stations[state.curr].ja;
       
+      // リセットボタンもカスタムダイアログに
       document.getElementById('reset-btn').onclick = () => {
-          if(state.spinning) return;
-          location.reload();
+          if (state.prog > 0 || state.failCount > 0 || state.spinning) {
+              showConfirm("最初からやり直しますか？", () => {
+                  if(state.spinning) clearSpin();
+                  location.reload();
+              });
+          } else {
+              location.reload();
+          }
       };
       
       updateModeUI();
@@ -760,6 +874,11 @@
     function spin() {
       if(state.spinning) return; 
       
+      const ctx = getAudioCtx();
+      if (ctx && ctx.state === 'suspended') {
+          ctx.resume();
+      }
+
       if(state.wheelFace.startsWith('return_method')) {
           state.wheelFace = state.mode === 'simple' ? 'normal_' + (state.splitEnabled ? 'on' : 'off') : state.mode + (state.splitEnabled ? '_on' : '_off');
           updateWheelDisplay();
@@ -768,8 +887,6 @@
       state.spinning = true; el.btn.disabled = true;
       el.btn.style.opacity = '0.7';
       el.res.innerHTML = '<span class="text-white animate-pulse">判定中...</span>';
-      
-      if(audioCtx.state === 'suspended') audioCtx.resume();
 
       let moveRot = 0;
       let validAngle = false;
@@ -807,15 +924,18 @@
         let progress = elapsed / duration;
         let nextTick = 30 + Math.pow(progress, 2.5) * 400;
         
-        playTone(1000 - (progress * 400), audioCtx.currentTime, 0.02, 'square', 0.05);
-        playTone(1500 - (progress * 400), audioCtx.currentTime, 0.01, 'triangle', 0.05);
+        const currentCtx = getAudioCtx();
+        if (currentCtx) {
+            playTone(1000 - (progress * 400), currentCtx.currentTime, 0.02, 'square', 0.05);
+            playTone(1500 - (progress * 400), currentCtx.currentTime, 0.01, 'triangle', 0.05);
+        }
 
-        setTimeout(tick, nextTick);
+        spinTimer1 = setTimeout(tick, nextTick);
       }
       
       tick(); 
 
-      setTimeout(finishSpin, duration);
+      spinTimer2 = setTimeout(finishSpin, duration);
     }
 
     function executeReturn(backSteps) {
@@ -826,10 +946,10 @@
             state.curr = (state.curr + (state.dir === 'outer' ? -actualSteps : actualSteps) + 30) % 30; 
             
             if (state.prog === 0) {
-                setTimeout(()=> el.res.innerHTML += '<br><span class="text-gray-400 text-sm">（スタート駅まで戻された）</span>', 1000);
+                spinTimer3 = setTimeout(()=> el.res.innerHTML += '<br><span class="text-gray-400 text-sm">（スタート駅まで戻された）</span>', 1000);
             }
         } else {
-            setTimeout(()=> el.res.innerHTML = '<span class="text-gray-400">まだ進んでない！</span>', 1000);
+            spinTimer3 = setTimeout(()=> el.res.innerHTML = '<span class="text-gray-400">まだ進んでない！</span>', 1000);
         }
         
         render();
@@ -849,7 +969,7 @@
               el.res.innerHTML = '<span class="text-red-500 text-xl font-black tracking-widest drop-shadow-[0_0_10px_rgba(255,0,0,0.8)]">戻る...🥶</span>';
               playDespair();
               el.body.classList.add('flash-active');
-              setTimeout(() => el.body.classList.remove('flash-active'), 1500);
+              spinTimer3 = setTimeout(() => el.body.classList.remove('flash-active'), 1500);
           } else {
               el.res.innerHTML = '<span class="text-green-400 text-xl font-bold tracking-widest drop-shadow-md">進む！🏃‍♂️</span>';
               playSuccess();
@@ -875,16 +995,16 @@
             el.res.innerHTML = '<span class="text-purple-500 text-xl font-black tracking-widest drop-shadow-[0_0_10px_rgba(128,0,128,0.8)]">２駅戻る...😱</span>';
             playDoubleDespair(); 
             el.body.classList.add('double-flash-active');
-            setTimeout(() => el.body.classList.remove('double-flash-active'), 2000);
+            spinTimer3 = setTimeout(() => el.body.classList.remove('double-flash-active'), 2000);
         } else {
             el.res.innerHTML = '<span class="text-red-500 text-lg font-black tracking-widest drop-shadow-[0_0_10px_rgba(255,0,0,0.8)]">戻る...🥶</span>';
             playDespair();
             el.body.classList.add('flash-active');
-            setTimeout(() => el.body.classList.remove('flash-active'), 1500);
+            spinTimer3 = setTimeout(() => el.body.classList.remove('flash-active'), 1500);
         }
 
         if (state.prog === 0) {
-            setTimeout(() => {
+            spinTimer3 = setTimeout(() => {
                 el.res.innerHTML = '<span class="text-green-400 text-lg font-bold drop-shadow-md">まだ進んでいないのでセーフ！💨</span>';
                 state.spinning = false; 
                 el.btn.disabled = false; 
@@ -897,11 +1017,11 @@
         state.failCount++;
 
         if (state.reverseRouletteEnabled) {
-            setTimeout(() => {
+            spinTimer3 = setTimeout(() => {
                 startReturnMethodSpin(backSteps);
             }, 2500);
         } else {
-            setTimeout(() => {
+            spinTimer3 = setTimeout(() => {
                 executeReturn(backSteps);
             }, 1500); 
         }
@@ -926,7 +1046,7 @@
       if(state.prog >= 30) { 
         el.btn.disabled = true;
         el.btn.style.opacity = '0.7';
-        setTimeout(() => {
+        spinTimer3 = setTimeout(() => {
             el.resSuccess.textContent = `${state.successCount}回`;
             el.resFail.textContent = `${state.failCount}回`;
             el.resTotal.textContent = `${state.successCount + state.failCount}回`;
@@ -959,14 +1079,17 @@
             let progress = elapsed / duration;
             let nextTick = 30 + Math.pow(progress, 2.5) * 400;
             
-            playTone(1200 - (progress * 400), audioCtx.currentTime, 0.02, 'sine', 0.05);
-            playTone(1800 - (progress * 400), audioCtx.currentTime, 0.01, 'square', 0.03);
+            const currentCtx = getAudioCtx();
+            if (currentCtx) {
+                playTone(1200 - (progress * 400), currentCtx.currentTime, 0.02, 'sine', 0.05);
+                playTone(1800 - (progress * 400), currentCtx.currentTime, 0.01, 'square', 0.03);
+            }
 
-            setTimeout(tick, nextTick);
+            spinTimer1 = setTimeout(tick, nextTick);
         }
         
         tick(); 
-        setTimeout(() => finishReturnMethodSpin(backSteps), duration);
+        spinTimer2 = setTimeout(() => finishReturnMethodSpin(backSteps), duration);
     }
 
     function finishReturnMethodSpin(backSteps) {
@@ -993,10 +1116,10 @@
             el.res.innerHTML = `<span class="text-orange-500 text-xl font-black tracking-widest drop-shadow-[0_0_10px_rgba(249,115,22,0.8)]">徒歩で${backSteps}駅戻る...🚶‍♂️💦</span>`;
             playDespair(); 
             el.body.classList.add('flash-active');
-            setTimeout(() => el.body.classList.remove('flash-active'), 1500);
+            spinTimer3 = setTimeout(() => el.body.classList.remove('flash-active'), 1500);
         }
 
-        setTimeout(() => {
+        spinTimer3 = setTimeout(() => {
             executeReturn(backSteps);
         }, 1500);
     }
