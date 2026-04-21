@@ -108,6 +108,9 @@
       top: -15px;
       left: 50%;
       transform: translateX(-50%);
+      /* ★ 針のアニメーション設定。支点を丸い留め具の中心に合わせています ★ */
+      transform-origin: center -34px; 
+      transition: transform 0.05s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       width: 0;
       height: 0;
       border-left: 14px solid transparent;
@@ -211,7 +214,6 @@
     <div id="res-display" class="mt-3 text-base font-bold text-gray-400 h-6">スタート駅を選んでね</div>
   </div>
 
-  <!-- ★ カスタム確認ダイアログ (ブラウザ制限を回避する専用UI) ★ -->
   <div id="custom-confirm" class="fixed inset-0 bg-black bg-opacity-80 z-[60] flex flex-col items-center justify-center hidden">
     <div class="bg-gray-800 border-2 border-red-500 rounded-xl p-6 w-80 text-center shadow-[0_0_20px_rgba(239,68,68,0.4)]">
       <h2 class="text-white font-bold text-lg mb-4 leading-relaxed" id="confirm-msg">進行状況をリセットしますか？</h2>
@@ -456,20 +458,21 @@
       mapToggleBtn: document.getElementById('toggle-map-btn'),
       reverseToggleBtn: document.getElementById('toggle-reverse-btn'),
       preventToggleBtn: document.getElementById('toggle-prevent-btn'),
-      splitToggleBtn: document.getElementById('toggle-split-btn') 
+      splitToggleBtn: document.getElementById('toggle-split-btn'),
+      needle: document.querySelector('.gold-needle') // ★ 針の要素
     };
 
-    // ★ Vercel等のiframe制限を回避するカスタム確認ポップアップ機能 ★
     let confirmAction = null;
-    function showConfirm(msg, onYes) {
+    function showConfirm(msg, onYes, onNo) {
         document.getElementById('confirm-msg').innerText = msg;
         document.getElementById('custom-confirm').classList.remove('hidden');
         confirmAction = onYes;
+        document.getElementById('confirm-no').onclick = () => {
+            document.getElementById('custom-confirm').classList.add('hidden');
+            if (onNo) onNo();
+            confirmAction = null;
+        };
     }
-    document.getElementById('confirm-no').onclick = () => {
-        document.getElementById('custom-confirm').classList.add('hidden');
-        confirmAction = null;
-    };
     document.getElementById('confirm-yes').onclick = () => {
         document.getElementById('custom-confirm').classList.add('hidden');
         if (confirmAction) confirmAction();
@@ -656,7 +659,7 @@
       
       render();
       
-      // ★ 駅選択の変更（カスタムダイアログ使用） ★
+      // ★ 駅選択の変更（changeイベント） ★
       let prevStation = el.select.value;
       el.select.addEventListener('click', e => { prevStation = e.target.value; });
       el.select.addEventListener('change', e => { 
@@ -678,7 +681,7 @@
         }
       });
 
-      // ★ 進行方向の変更（カスタムダイアログ使用） ★
+      // ★ 進行方向の変更（clickイベントでキャンセル制御） ★
       document.querySelectorAll('input[name="dir"]').forEach(r => {
         r.addEventListener('click', e => { 
           if (state.dir === e.target.value) return; 
@@ -699,7 +702,7 @@
         });
       });
 
-      // ★ モード変更（カスタムダイアログ使用。これでスマホでも絶対動きます） ★
+      // ★ モード変更（clickイベントでキャンセル制御。これでスマホでも絶対動きます） ★
       document.querySelectorAll('input[name="mode"]').forEach(r => {
         r.addEventListener('click', e => {
           if (state.mode === e.target.value) return;
@@ -930,6 +933,14 @@
             playTone(1500 - (progress * 400), currentCtx.currentTime, 0.01, 'triangle', 0.05);
         }
 
+        // ★ 針を左（マイナス方向）に弾くアニメーション ★
+        if (el.needle) {
+            el.needle.style.transform = `translateX(-50%) rotate(-15deg)`;
+            setTimeout(() => {
+                if (el.needle) el.needle.style.transform = `translateX(-50%) rotate(0deg)`;
+            }, 30);
+        }
+
         spinTimer1 = setTimeout(tick, nextTick);
       }
       
@@ -1083,6 +1094,14 @@
             if (currentCtx) {
                 playTone(1200 - (progress * 400), currentCtx.currentTime, 0.02, 'sine', 0.05);
                 playTone(1800 - (progress * 400), currentCtx.currentTime, 0.01, 'square', 0.03);
+            }
+
+            // ★ リバースルーレットは逆回転なので針を右（プラス方向）に弾く ★
+            if (el.needle) {
+                el.needle.style.transform = `translateX(-50%) rotate(15deg)`;
+                setTimeout(() => {
+                    if (el.needle) el.needle.style.transform = `translateX(-50%) rotate(0deg)`;
+                }, 30);
             }
 
             spinTimer1 = setTimeout(tick, nextTick);
