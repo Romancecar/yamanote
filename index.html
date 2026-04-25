@@ -18,7 +18,7 @@
   .station-ja { color: #166534; font-size: 10px; font-weight: 900; white-space: nowrap !important; line-height: 1; display: block; }
   
   .text-outline { text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0px 2px 4px rgba(0,0,0,0.8); }
-  .control-panel { background: rgba(0, 0, 0, 0.6); border-radius: 10px; padding: 10px; margin: 10px auto; width: 95%; max-width: 500px; font-size: 14px; }
+  .control-panel { background: rgba(0, 0, 0, 0.6); border-radius: 10px; padding: 10px; margin: 10px auto; width: 95%; max-width: 500px; font-size: 14px; position: relative; }
   select, input[type="radio"] { cursor: pointer; }
 
   @keyframes despair-flash {
@@ -108,7 +108,6 @@
       top: -15px;
       left: 50%;
       transform: translateX(-50%);
-      /* ★ 針のアニメーション設定。支点を丸い留め具の中心に合わせています ★ */
       transform-origin: center -34px; 
       transition: transform 0.05s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       width: 0;
@@ -146,7 +145,11 @@
   
   <div class="control-panel">
     
-    <div class="flex justify-center flex-wrap gap-x-4 gap-y-2 text-sm mb-3 pb-3 border-b border-gray-700 w-full font-bold">
+    <div class="absolute top-2 right-2 z-10">
+      <button id="help-btn" class="bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded-md text-[10px] border border-gray-500 shadow-md text-white font-bold transition-colors">📖 遊び方</button>
+    </div>
+
+    <div class="flex justify-center flex-wrap gap-x-4 gap-y-2 text-sm mb-3 pb-3 border-b border-gray-700 w-full font-bold mt-4">
       <label class="flex items-center gap-1 cursor-pointer text-blue-300">
         <input type="radio" name="mode" value="simple">🧊Simple
       </label>
@@ -177,7 +180,7 @@
         <button id="toggle-map-btn" class="bg-blue-700 hover:bg-blue-600 px-2 py-1 rounded text-[11px] border border-blue-500 transition-colors font-bold shadow-md">🗺️ 路線図: ON</button>
         <button id="toggle-reverse-btn" class="bg-blue-700 hover:bg-blue-600 px-2 py-1 rounded text-[11px] border border-blue-500 transition-colors font-bold shadow-md">🔄 リバース: ON</button>
         <button id="toggle-prevent-btn" class="bg-blue-700 hover:bg-blue-600 px-2 py-1 rounded text-[11px] border border-blue-500 transition-colors font-bold shadow-md">🛡️ 無限戻り防止: ON</button>
-        <button id="toggle-split-btn" class="bg-blue-700 hover:bg-blue-600 px-2 py-1 rounded text-[11px] border border-blue-500 transition-colors font-bold shadow-md">🔪 スプリット: OFF</button>
+        <button id="toggle-split-btn" class="bg-blue-700 hover:bg-blue-600 px-2 py-1 rounded text-[11px] border border-blue-500 transition-colors font-bold shadow-md">🦓 スプリット: OFF</button>
     </div>
 
     <div id="status-row" class="flex justify-around mt-3 border-t border-gray-700 pt-2">
@@ -201,8 +204,7 @@
       
       <div class="roulette-wheel" id="wheel">
         <div id="wheel-content">
-          <!-- JSで動的に中身が書き換わります -->
-        </div>
+          </div>
       </div>
 
       <div class="gold-center">
@@ -212,6 +214,44 @@
 
     <button id="spin-btn" class="w-full mt-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-full font-black text-2xl shadow-[0_0_15px_rgba(168,85,247,0.5)] active:scale-95 transition-all text-outline">ルーレットを回す！</button>
     <div id="res-display" class="mt-3 text-base font-bold text-gray-400 h-6">スタート駅を選んでね</div>
+  </div>
+
+  <div id="instruction-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[70] flex flex-col items-center justify-center hidden px-4">
+    <div class="bg-gray-800 border-2 border-purple-500 rounded-xl p-5 w-full max-w-[400px] shadow-[0_0_20px_rgba(168,85,247,0.4)] text-sm flex flex-col max-h-[85vh]">
+      <h2 class="text-white font-black text-lg mb-3 text-center border-b border-gray-600 pb-2">📖 取扱説明書</h2>
+      
+      <div class="overflow-y-auto pr-2 text-gray-200 space-y-4">
+        <div>
+          <h3 class="text-purple-300 font-bold mb-1">【 🎮 4つのモード 】</h3>
+          <ul class="space-y-1 text-[12px] leading-snug">
+            <li><span class="text-blue-300">🧊 Simple:</span> 路線図などの表示を消した純粋な運試し<br><span class="text-gray-400">（進む80% / 戻る20%）</span></li>
+            <li class="pt-1"><span class="text-yellow-300">🐣 Easy:</span> 一発クリアが出やすい優しい設定<br><span class="text-gray-400">（進む80% / 戻る17.5% / 長野2.5%）</span></li>
+            <li class="pt-1"><span class="text-white font-bold">🚶 Normal:</span> 基本となる標準モード<br><span class="text-gray-400">（進む80% / 戻る20%）</span></li>
+            <li class="pt-1"><span class="text-red-400">👿 Hell:</span> 絶望の鬼畜モード<br><span class="text-gray-400">（進む72% / 戻る24% / 2駅戻る3% / 長野1%）</span></li>
+          </ul>
+        </div>
+        
+        <div>
+          <h3 class="text-blue-300 font-bold mb-1">【 ⚙️ オプション機能 】</h3>
+          <ul class="space-y-1 text-[12px] leading-snug">
+            <li><span class="font-bold">🗺️ 路線図:</span> 現在地(🍤)とゴールまでのマップ表示</li>
+            <li class="pt-1"><span class="font-bold">🔄 リバース:</span> 「戻る」を引いた際、移動手段(徒歩 or 交通)を決める追加ルーレットが発動</li>
+            <li class="pt-1"><span class="font-bold">🛡️ 無限戻り防止:</span> 連続で「戻る」が出なくなる ＆ <span class="text-yellow-300">過去に「戻る」を引いた駅を確実に突破できる完全ループ防止機能！</span></li>
+            <li class="pt-1"><span class="font-bold">🦓 スプリット:</span> 盤面を細かく分割(シマシマ🦓)し、針が止まる直前まで結果が読めない仕様に</li>
+          </ul>
+        </div>
+        
+        <div>
+          <h3 class="text-yellow-300 font-bold mb-1">【 ✨ 特殊マス 】</h3>
+          <ul class="space-y-1 text-[12px] leading-snug">
+            <li><span class="font-bold text-yellow-200">🚄 長野(ワープ):</span> 引いた瞬間に企画クリアとなる奇跡のマス！（Easy / Hell限定）</li>
+            <li class="pt-1"><span class="font-bold text-purple-300">😱 2駅戻る:</span> 絶望の音とともに2駅分強制送還される最悪のマス！（Hell限定）</li>
+          </ul>
+        </div>
+      </div>
+
+      <button id="close-help-btn" class="mt-4 bg-gray-600 hover:bg-gray-500 py-2 rounded-full font-bold text-white transition-colors text-sm w-full shadow-md">閉じる</button>
+    </div>
   </div>
 
   <div id="custom-confirm" class="fixed inset-0 bg-black bg-opacity-80 z-[60] flex flex-col items-center justify-center hidden">
@@ -407,13 +447,15 @@
       {ja:"御徒町",en:"Okachimachi"}, {ja:"秋葉原",en:"Akihabara"}, {ja:"神田",en:"Kanda"}
     ];
     
+    // ★ failedProgs を追加して、過去に失敗した駅（進捗）を記憶する ★
     let state = { 
         start:0, curr:0, prog:0, failCount:0, successCount:0, rot:0, spinning:false, 
         dir:'outer', mode:'normal', mapVisible:false, wheelFace:'normal_off',
         reverseRouletteEnabled: false,
         preventConsecutiveReturn: true,
         splitEnabled: false, 
-        lastResultWasReturn: false
+        lastResultWasReturn: false,
+        failedProgs: [] // 救済用フラグ
     };
 
     let spinTimer1 = null, spinTimer2 = null, spinTimer3 = null;
@@ -459,7 +501,17 @@
       reverseToggleBtn: document.getElementById('toggle-reverse-btn'),
       preventToggleBtn: document.getElementById('toggle-prevent-btn'),
       splitToggleBtn: document.getElementById('toggle-split-btn'),
-      needle: document.querySelector('.gold-needle') // ★ 針の要素
+      needle: document.querySelector('.gold-needle'),
+      helpBtn: document.getElementById('help-btn'),
+      helpModal: document.getElementById('instruction-modal'),
+      closeHelpBtn: document.getElementById('close-help-btn')
+    };
+
+    el.helpBtn.onclick = () => {
+        el.helpModal.classList.remove('hidden');
+    };
+    el.closeHelpBtn.onclick = () => {
+        el.helpModal.classList.add('hidden');
     };
 
     let confirmAction = null;
@@ -655,23 +707,23 @@
       updateToggleBtnUI(el.mapToggleBtn, state.mapVisible, '🗺️ 路線図');
       updateToggleBtnUI(el.reverseToggleBtn, state.reverseRouletteEnabled, '🔄 リバース');
       updateToggleBtnUI(el.preventToggleBtn, state.preventConsecutiveReturn, '🛡️ 無限戻り防止');
-      updateToggleBtnUI(el.splitToggleBtn, state.splitEnabled, '🔪 スプリット');
+      updateToggleBtnUI(el.splitToggleBtn, state.splitEnabled, '🦓 スプリット');
       
       render();
       
-      // ★ 駅選択の変更（changeイベント） ★
       let prevStation = el.select.value;
       el.select.addEventListener('click', e => { prevStation = e.target.value; });
       el.select.addEventListener('change', e => { 
         let newVal = e.target.value;
         if(state.prog > 0 || state.failCount > 0 || state.spinning) {
-            e.target.value = prevStation; // 見た目を一旦戻す
+            e.target.value = prevStation;
             showConfirm("駅を変更すると進行状況（または回転）がリセットされます。よろしいですか？", () => {
                 e.target.value = newVal;
                 prevStation = newVal;
                 if(state.spinning) clearSpin();
                 state.start = state.curr = parseInt(newVal); 
                 state.prog = 0; state.failCount = 0; state.successCount = 0; state.lastResultWasReturn = false;
+                state.failedProgs = []; // ★ 救済フラグもリセット
                 render(); 
             });
         } else {
@@ -681,18 +733,18 @@
         }
       });
 
-      // ★ 進行方向の変更（clickイベントでキャンセル制御） ★
       document.querySelectorAll('input[name="dir"]').forEach(r => {
         r.addEventListener('click', e => { 
           if (state.dir === e.target.value) return; 
           let newVal = e.target.value;
           if(state.prog > 0 || state.failCount > 0 || state.spinning) {
-            e.preventDefault(); // 見た目の変更を止める
+            e.preventDefault();
             showConfirm("方向を変更すると進行状況（または回転）がリセットされます。よろしいですか？", () => {
                 document.querySelector(`input[name="dir"][value="${newVal}"]`).checked = true;
                 if(state.spinning) clearSpin();
                 state.dir = newVal; 
                 state.prog = 0; state.failCount = 0; state.successCount = 0; state.lastResultWasReturn = false;
+                state.failedProgs = []; // ★ 救済フラグもリセット
                 render(); 
             });
           } else {
@@ -702,34 +754,34 @@
         });
       });
 
-      // ★ モード変更（clickイベントでキャンセル制御。これでスマホでも絶対動きます） ★
       document.querySelectorAll('input[name="mode"]').forEach(r => {
         r.addEventListener('click', e => {
           if (state.mode === e.target.value) return;
           let newVal = e.target.value;
           if(state.prog > 0 || state.failCount > 0 || state.spinning) {
-            e.preventDefault(); // 見た目の変更を止める
+            e.preventDefault();
             showConfirm("モードを変更すると進行状況（または回転）がリセットされます。よろしいですか？", () => {
                 document.querySelector(`input[name="mode"][value="${newVal}"]`).checked = true;
                 if(state.spinning) clearSpin();
                 state.mode = newVal;
                 state.start = state.curr = parseInt(el.select.value);
                 state.prog = 0; state.failCount = 0; state.successCount = 0; state.lastResultWasReturn = false;
+                state.failedProgs = []; // ★ 救済フラグもリセット
                 render();
                 updateModeUI();
             });
           } else {
-            if(state.spinning) clearSpin(); // 念のため
+            if(state.spinning) clearSpin();
             state.mode = newVal;
             state.start = state.curr = parseInt(el.select.value);
             state.prog = 0; state.failCount = 0; state.successCount = 0; state.lastResultWasReturn = false;
+            state.failedProgs = []; // ★ 救済フラグもリセット
             render();
             updateModeUI();
           }
         });
       });
 
-      // 各種トグルは回転中でも操作可能
       el.mapToggleBtn.onclick = () => {
         state.mapVisible = !state.mapVisible;
         el.circle.style.display = state.mapVisible ? 'block' : 'none';
@@ -746,12 +798,11 @@
         updateToggleBtnUI(el.preventToggleBtn, state.preventConsecutiveReturn, '🛡️ 無限戻り防止');
       };
 
-      // ★ スプリットボタンだけは、ルーレット回転中の切り替えをブロック ★
       el.splitToggleBtn.onclick = () => {
         if(state.spinning) return; 
         
         state.splitEnabled = !state.splitEnabled;
-        updateToggleBtnUI(el.splitToggleBtn, state.splitEnabled, '🔪 スプリット');
+        updateToggleBtnUI(el.splitToggleBtn, state.splitEnabled, '🦓 スプリット');
         if(!state.wheelFace.startsWith('return_method')) {
             if (state.mode === 'simple') {
                  state.wheelFace = 'normal_' + (state.splitEnabled ? 'on' : 'off');
@@ -765,7 +816,6 @@
       el.btn.onclick = spin;
       el.name.textContent = stations[state.curr].ja;
       
-      // リセットボタンもカスタムダイアログに
       document.getElementById('reset-btn').onclick = () => {
           if (state.prog > 0 || state.failCount > 0 || state.spinning) {
               showConfirm("最初からやり直しますか？", () => {
@@ -897,6 +947,7 @@
       let effMode = state.mode === 'simple' ? 'normal' : state.mode;
       let effSplit = state.splitEnabled;
 
+      // ★ ループ防止（連続戻り ＆ 過去の失敗駅の救済）★
       while(!validAngle) {
           moveRot = (Math.floor(Math.random() * 4 + 4) * 360) + Math.floor(Math.random() * 360);
           let tempRot = state.rot + moveRot;
@@ -905,8 +956,11 @@
           
           let resType = getResultTypeForAngle(offsetDeg, effMode, effSplit);
 
-          if (state.mode !== 'simple' && state.preventConsecutiveReturn && state.lastResultWasReturn) {
-              if (resType !== 'fail' && resType !== 'double_fail') {
+          if (state.mode !== 'simple' && state.preventConsecutiveReturn) {
+              let isConsecutiveFail = state.lastResultWasReturn && (resType === 'fail' || resType === 'double_fail');
+              let isWallFail = state.failedProgs.includes(state.prog) && (resType === 'fail' || resType === 'double_fail');
+              
+              if (!isConsecutiveFail && !isWallFail) {
                   validAngle = true; 
               }
           } else {
@@ -933,7 +987,6 @@
             playTone(1500 - (progress * 400), currentCtx.currentTime, 0.01, 'triangle', 0.05);
         }
 
-        // ★ 針を左（マイナス方向）に弾くアニメーション ★
         if (el.needle) {
             el.needle.style.transform = `translateX(-50%) rotate(-15deg)`;
             setTimeout(() => {
@@ -1002,6 +1055,11 @@
         state.lastResultWasReturn = true; 
         let backSteps = (resultType === 'double_fail') ? 2 : 1;
         
+        // ★ 救済のために失敗した進捗を記憶する ★
+        if (!state.failedProgs.includes(state.prog)) {
+            state.failedProgs.push(state.prog);
+        }
+
         if (resultType === 'double_fail') {
             el.res.innerHTML = '<span class="text-purple-500 text-xl font-black tracking-widest drop-shadow-[0_0_10px_rgba(128,0,128,0.8)]">２駅戻る...😱</span>';
             playDoubleDespair(); 
@@ -1096,7 +1154,6 @@
                 playTone(1800 - (progress * 400), currentCtx.currentTime, 0.01, 'square', 0.03);
             }
 
-            // ★ リバースルーレットは逆回転なので針を右（プラス方向）に弾く ★
             if (el.needle) {
                 el.needle.style.transform = `translateX(-50%) rotate(15deg)`;
                 setTimeout(() => {
